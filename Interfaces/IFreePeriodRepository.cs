@@ -13,6 +13,6 @@ namespace RecordBot.Interfaces
         Task<IReadOnlyList<FreePeriod>> GetAllPeriods(CancellationToken cancellationToken);
         Task<IReadOnlyList<FreePeriod>> GetFreePeriods(Procedure procedure, CancellationToken cancellationToken);
         Task<IReadOnlyList<DateOnly>> GetDates(CancellationToken cancellationToken);
-        Task<IReadOnlyList<DateTime>> GetTimeForReservedByDate(DateOnly date,CancellationToken cancellationToken);
+        Task<IReadOnlyList<DateTime>> GetDateTimeForReserved(Procedure procedure, CancellationToken cancellationToken);
     }
 }

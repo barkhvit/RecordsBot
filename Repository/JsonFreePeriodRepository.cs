@@ -60,9 +60,21 @@ namespace RecordBot.Repository
             return dates;
         }
 
-        public Task<IReadOnlyList<DateTime>> GetTimeForReservedByDate(DateOnly date, CancellationToken cancellationToken)
+        //выводит в формате DateTime возможные слоты для бронирования
+        public async Task<IReadOnlyList<DateTime>> GetDateTimeForReserved(Procedure procedure, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            List<DateTime> dateTimes = new List<DateTime>();
+            var freePeriods = await GetAllPeriods(cancellationToken);
+            foreach(FreePeriod freePeriod in freePeriods)
+            {
+                DateTime currentDateTime = new DateTime(freePeriod.Date, freePeriod.StartTime);
+                while(currentDateTime.AddMinutes(procedure.DurationMinutes)<=new DateTime(freePeriod.Date, freePeriod.FinishTime))
+                {
+                    dateTimes.Add(currentDateTime);
+                    currentDateTime = currentDateTime.AddMinutes(procedure.DurationMinutes);
+                }
+            }
+            return dateTimes.AsReadOnly();
         }
     }
 }

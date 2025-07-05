@@ -41,17 +41,14 @@ namespace RecordBot.Repository
             {
                 foreach(string file in Directory.GetFiles(dir))
                 {
-                    string json = File.ReadAllText(file);
+                    string json = await File.ReadAllTextAsync(file,cancellationToken);
                     var item = JsonSerializer.Deserialize<FreePeriod>(json);
                     if (item != null) freePeriods.Add(item);
                 }
             }
-            return await Task.FromResult(freePeriods.AsReadOnly());
+            return freePeriods.AsReadOnly();
         }
-        public Task<IReadOnlyList<FreePeriod>> GetFreePeriods(Procedure procedure, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
+        
 
         public async Task<IReadOnlyList<DateOnly>> GetDates(CancellationToken cancellationToken)
         {
@@ -76,5 +73,58 @@ namespace RecordBot.Repository
             }
             return dateTimes.AsReadOnly();
         }
+
+        //разделение периода
+        public async Task<bool> SplitPeriod(FreePeriod freePeriod, DateTime dateTime, int duration, CancellationToken ct)
+        {
+            DateTime startPeriod = new DateTime(freePeriod.Date, freePeriod.StartTime);
+            DateTime finishPeriod = new DateTime(freePeriod.Date, freePeriod.FinishTime);
+            DateTime startAppointment = dateTime;
+            DateTime finishAppointment = dateTime.AddMinutes(duration);
+
+            FreePeriod freePeriod1 = new(){FreePeriodId = Guid.NewGuid(),Date = freePeriod.Date,
+                StartTime = TimeOnly.FromDateTime(startPeriod),FinishTime = TimeOnly.FromDateTime(startAppointment)};
+
+            FreePeriod freePeriod2 = new(){FreePeriodId = Guid.NewGuid(),Date = freePeriod.Date,
+                StartTime = TimeOnly.FromDateTime(finishAppointment),FinishTime = TimeOnly.FromDateTime(finishPeriod)};
+
+            bool isDelete = await Delete(freePeriod, ct);
+            if (isDelete)
+            {
+                //добавляем новые периоды
+                if(startPeriod < startAppointment && finishPeriod > finishAppointment)
+                {
+                    await Add(freePeriod1, ct);
+                    await Add(freePeriod2, ct);
+                    return true;
+                }
+                else if(startPeriod == startAppointment && finishPeriod > finishAppointment)
+                {
+                    await Add(freePeriod2, ct); return true;
+                }
+                else if (startPeriod < startAppointment && finishPeriod == finishAppointment)
+                {
+                    await Add(freePeriod1, ct); return true;
+                }
+            }
+            return false;
+        }
+
+        //удаление периода
+        public async Task<bool> Delete(FreePeriod freePeriod, CancellationToken ct)
+        {
+            string pathFile = Path.Combine(_storage, freePeriod.Date.ToString(), $"{freePeriod.FreePeriodId}.json");
+            try
+            {
+                if (!File.Exists(pathFile)) return false;
+                await Task.Run(() => File.Delete(pathFile), ct);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }

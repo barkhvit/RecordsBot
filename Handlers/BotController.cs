@@ -1,4 +1,8 @@
-﻿using RecordBot.Interfaces;
+﻿using RecordBot.Commands;
+using RecordBot.Helpers;
+using RecordBot.Interfaces;
+using RecordBot.Scenario.InfoStorage;
+using RecordBot.Scenarios;
 using RecordBot.Services;
 using System;
 using System.Collections.Generic;
@@ -9,12 +13,19 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace RecordBot.Handlers
 {
     public delegate void MessageEventHandler(long TelegramId, string FirstName, string message);
     public class BotController : IUpdateHandler
     {
+        private readonly ITelegramBotClient _botClient;
+
+        //сценарии
+        private readonly IScenarioContextRepository _scenarioContextRepository;
+        private readonly IEnumerable<IScenario> _scenarios; //сценарии
+
         //обработчики апдейтов
         private readonly MessageUpdateHandler _messageUpdateHandler; //текстовые сообщения
         private readonly CallBackUpdateHandler _callBackUpdateHandler; //колбэки
@@ -25,18 +36,59 @@ namespace RecordBot.Handlers
         public event MessageEventHandler? OnHandleUpdateComplete;
 
         public BotController(ITelegramBotClient botClient, IUserService userService, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, ICreateProcedureService createProcedureService)
+            IProcedureService procedureService, ICreateProcedureService createProcedureService, IAppointmentService appointmentService, 
+            InfoRepositoryService infoRepositoryService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository)
         {
+            _botClient = botClient;
+            _scenarios = scenarios;
+            _scenarioContextRepository = scenarioContextRepository;
             _replyToMessageUpdateHandler = new ReplyToMessageUpdateHandler(botClient, procedureService, createProcedureService);
-            _messageUpdateHandler = new MessageUpdateHandler(userService, botClient, freePeriodService, procedureService);
-            _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, createProcedureService);
+            _messageUpdateHandler = new MessageUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
+            _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, createProcedureService, appointmentService, infoRepositoryService);
         }
+
+
 
         //определяем тип апдейта и перенаправляем в нужный Handler
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             try
             {
+                // Получаем данные из update с помощью pattern matching
+                var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
+
+                //регистрируем пользователя
+
+
+                //обработка Cancel - отмена сценария
+                if(Text == "/cancel" || Text == "cancel")
+                {
+                    await _scenarioContextRepository.ResetContext(userId, cancellationToken);
+                    await _botClient.AnswerCallbackQuery(update.CallbackQuery.Id);
+                    await _botClient.SendMessage(chatId, "Действие отменено", cancellationToken: cancellationToken);
+                    return;
+                }
+
+                //проверяем, есть ли у пользователя сценарий
+                var context = await _scenarioContextRepository.GetContext(userId, cancellationToken);
+                if (context != null)
+                {
+                    await ProcessScenario(context, update, cancellationToken);
+                    return;
+                }
+
+                //СЦЕНАРИИ
+                //создание процедуры(услуги)
+                if(Text == "Procedure:Create")
+                {
+                    var newContext = new ScenarioContext(userId, ScenarioType.AddProcedure);
+                    await _scenarioContextRepository.SetContext(userId, newContext, cancellationToken);
+                    await ProcessScenario(newContext, update, cancellationToken);
+                }
+
+
+
+                //в зависимости от типа Update переключаем в нужный обработчик
                 switch (update.Type)
                 {
                     case Telegram.Bot.Types.Enums.UpdateType.Message:
@@ -68,6 +120,27 @@ namespace RecordBot.Handlers
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
+        }
+
+        private IScenario GetScenario(ScenarioType scenario)
+        {
+            var handler = _scenarios.FirstOrDefault(s => s.CanHandle(scenario));
+            return handler ?? throw new ArgumentException($"Нет сценария типа: {scenario}");
+        }
+
+        private async Task ProcessScenario(ScenarioContext context, Update update, CancellationToken ct)
+        {
+            //получаем IScenario
+            var scenario = GetScenario(context.CurrentScenario);
+            var scenarioResult = await scenario.HandleScenarioAsync(_botClient, context, update, ct);
+            if(scenarioResult == ScenarioResult.Completed)
+            {
+                await _scenarioContextRepository.ResetContext(context.UserId, ct);
+            }
+            else
+            {
+                await _scenarioContextRepository.SetContext(context.UserId, context, ct);
+            }
         }
     }
 }

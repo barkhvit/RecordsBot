@@ -55,5 +55,10 @@ namespace RecordBot.Repository
             }
             return false;
         }
+        public async Task<Procedure?> GetProcedureById(Guid procedureId, CancellationToken cancellationToken)
+        {
+            var procedures = await GetProcedures(cancellationToken);
+            return procedures.FirstOrDefault(p => p.Id == procedureId);
+        }
     }
 }

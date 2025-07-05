@@ -32,5 +32,16 @@ namespace RecordBot.Services
             return await _procedureRepository.GetProcedures(cancellationToken);
         }
 
+        public async Task<Procedure?> GetProcedureByGuidId(Guid guidId,CancellationToken cancellationToken)
+        {
+            return await _procedureRepository.GetProcedureById(guidId, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Procedure>> GetProceduresByActive(bool isActive,CancellationToken cancellationToken)
+        {
+            var procedures =  await _procedureRepository.GetProcedures(cancellationToken);
+            return procedures.Where(p => p.isActive == isActive).ToList().AsReadOnly();
+        }
+
     }
 }

@@ -10,7 +10,12 @@ namespace RecordBot.Interfaces
 {
     public interface IFreePeriodService
     {
-        public Task<bool> Add(FreePeriod freePeriod, CancellationToken cancellationToken);
-        public Task<IReadOnlyList<FreePeriod>> GetAllPeriods(CancellationToken cancellationToken);
+        Task<bool> Add(FreePeriod freePeriod, CancellationToken cancellationToken);
+        Task<IReadOnlyList<FreePeriod>> GetAllPeriods(CancellationToken cancellationToken);
+        Task<IReadOnlyList<DateOnly>> GetDates(CancellationToken cancellationToken);
+        Task<IReadOnlyList<DateTime>> GetDateTimeForReserved(Procedure procedure, CancellationToken cancellationToken);
+        Task<FreePeriod?> GetFreePeriodForReserved(Procedure procedure, DateTime dateTimeAppointment, CancellationToken ct);
+        Task<bool> SplitPeriod(FreePeriod freePeriod, DateTime dateTime, int duration, CancellationToken ct);
+        Task Delete(FreePeriod freePeriod, CancellationToken ct);
     }
 }

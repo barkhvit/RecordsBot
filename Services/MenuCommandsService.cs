@@ -14,7 +14,7 @@ namespace RecordBot.Services
             new(){Command = "info", Description = "информация"},
             new(){Command = "message", Description = "задать вопрос"},
             new(){Command = "myrecords", Description = "мои записи"},
-            new(){Command = "price", Description = "стоимость"},
+            new(){Command = "procedures", Description = "процедуры"},
             new(){Command = "admin", Description = "управление"}
         };
     }

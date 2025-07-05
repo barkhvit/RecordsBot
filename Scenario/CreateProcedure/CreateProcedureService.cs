@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RecordBot.Scenario
+namespace RecordBot.Scenario.CreateProcedure
 {
     public class CreateProcedureService : ICreateProcedureService
     {

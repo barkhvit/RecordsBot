@@ -1,7 +1,7 @@
 ﻿using RecordBot.Enums;
 using RecordBot.Interfaces;
 using RecordBot.Models;
-using RecordBot.Scenario;
+using RecordBot.Scenario.CreateProcedure;
 using System;
 using System.Collections.Generic;
 using System.Linq;

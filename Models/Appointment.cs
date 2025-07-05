@@ -8,10 +8,10 @@ namespace RecordBot.Models
 {
     public class Appointment
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public DateTime dateTime { get; set; }
         public bool isConfirmed { get; set; }
-        public long UserId { get; set; }
-        public int ProcedureId { get; set; }
+        public long TelegramUserId { get; set; }
+        public Guid ProcedureId { get; set; }
     }
 }

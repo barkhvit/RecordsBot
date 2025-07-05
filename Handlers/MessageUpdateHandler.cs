@@ -1,4 +1,7 @@
-﻿using RecordBot.Interfaces;
+﻿using RecordBot.Commands;
+using RecordBot.Enums;
+using RecordBot.Helpers;
+using RecordBot.Interfaces;
 using RecordBot.Models;
 using RecordBot.Services;
 using System;
@@ -19,12 +22,22 @@ namespace RecordBot.Handlers
         private readonly IUserService _userservice;
         private readonly IFreePeriodService _freePeriodService;
         private readonly ITelegramBotClient _telegramBotClient;
+        private readonly IAppointmentService _appointmentService;
+        private readonly IProcedureService _procedureService;
+        private readonly CommandsForAppointments _commandsForAppointments;
+        private readonly CommandsForAdmin _commandsForAdmin;
+        private readonly CommandsForMainMenu _commandsForMainMenu;
         public MessageUpdateHandler(IUserService userservice, ITelegramBotClient telegramBotClient, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService)
+            IProcedureService procedureService, IAppointmentService appointmentService)
         {
             _telegramBotClient = telegramBotClient;
             _userservice = userservice;
             _freePeriodService = freePeriodService;
+            _appointmentService = appointmentService;
+            _procedureService = procedureService;
+            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService);
+            _commandsForAdmin = new CommandsForAdmin(_telegramBotClient, appointmentService, procedureService);
+            _commandsForMainMenu = new CommandsForMainMenu(_telegramBotClient, appointmentService, procedureService);
         }
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -33,7 +46,9 @@ namespace RecordBot.Handlers
                 switch (update.Message.Text)
                 {
                     case "/start": await StartCommand(update, cancellationToken); break;
-                    case "/admin": await AdminCommand(update, cancellationToken); break;
+                    case "/admin": await _commandsForAdmin.AdminCommand(update,TypeQuery.MessageQuery, cancellationToken); break;
+                    case "/procedures": await ShowActiveProcedures(update, cancellationToken, ReasonShowProcedure.reserved); break;
+                    case "/myrecords": await _commandsForAppointments.ShowMyRecordsCommand(update, cancellationToken);break;
                     default: await botClient.SendMessage(update.Message.Chat.Id, "Выберите команду из меню", cancellationToken: cancellationToken); break;
                 }
             }
@@ -43,24 +58,18 @@ namespace RecordBot.Handlers
             }
         }
 
-        
-
-        private async Task AdminCommand(Update update, CancellationToken cancellationToken)
+        //показать активные процедуры
+        private async Task ShowActiveProcedures(Update update, CancellationToken cancellationToken, ReasonShowProcedure reasonShowProcedure)
         {
-            long TelegramUserId = update.Message.Chat.Id;
-            if (TelegramUserId == AdminId)
-            {
-                await _telegramBotClient.SendMessage(
+            var procedures = await _procedureService.GetProceduresByActive(true, cancellationToken);
+            await _telegramBotClient.SendMessage(
                 chatId: update.Message.Chat.Id,
-                text: "Выберите действие",
-                replyMarkup: Keyboards.Keyboards.GetAdminKeybord(),
-                cancellationToken: cancellationToken);
-            }
-            else
-            {
-                await _telegramBotClient.SendMessage(TelegramUserId, "Вы не являетесь администратором", cancellationToken: cancellationToken);
-            }
+                text: "Выберите процедуру:",
+                cancellationToken: cancellationToken,
+                replyMarkup: Keyboards.KeyboardsForProcedures.GetAllProcedures(procedures, reasonShowProcedure));
         }
+
+        
 
         private async Task StartCommand(Update update, CancellationToken cancellationToken)
         {
@@ -70,6 +79,8 @@ namespace RecordBot.Handlers
                 commands: MenuCommandsService.mainMenu,
                 scope: null,//для всех пользователей,
                 languageCode:null);//язык по умолчанию
+
+            await _commandsForMainMenu.ShowMainMenu(update, cancellationToken);
         }
 
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)

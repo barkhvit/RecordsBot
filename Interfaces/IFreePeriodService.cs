@@ -17,5 +17,7 @@ namespace RecordBot.Interfaces
         Task<FreePeriod?> GetFreePeriodForReserved(Procedure procedure, DateTime dateTimeAppointment, CancellationToken ct);
         Task<bool> SplitPeriod(FreePeriod freePeriod, DateTime dateTime, int duration, CancellationToken ct);
         Task Delete(FreePeriod freePeriod, CancellationToken ct);
+        Task<FreePeriod?> GetMergePeriod(FreePeriod freePeriod, CancellationToken ct);
+        Task<IReadOnlyList<FreePeriod>> GetPeriodsByDate(DateOnly dateOnly, CancellationToken ct);
     }
 }

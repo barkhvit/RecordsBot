@@ -14,7 +14,7 @@ namespace RecordBot.Commands
 {
     public class CommandsForMainMenu : Commands
     {
-        private readonly string MainMenuPictures = "MainMenu.jpg";
+        //private readonly string MainMenuPictures = "1.gif";
         public CommandsForMainMenu(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService) 
             : base(telegramBotClient, appointmentService, procedureService)
         {
@@ -24,7 +24,11 @@ namespace RecordBot.Commands
         {
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
-
+            
+            string FolderPath = Path.Combine("Image");
+            int filesCount = Directory.GetFiles(FolderPath).Length;
+            int random = Random.Shared.Next(1, filesCount+1);
+            string MainMenuPictures = $"{random.ToString()}.jpg";
             string PhotoPath = Path.Combine("Image", MainMenuPictures);
 
             switch (update.Type)

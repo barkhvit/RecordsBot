@@ -101,7 +101,8 @@ namespace RecordBot.Keyboards
         internal static InlineKeyboardMarkup? GetKeybordForReserved(Procedure procedure)
         {
             string textButton = "📅 ЗАПИСАТЬСЯ  ";
-            string callBackData = $"reservedOnProcedure:{procedure.Id}";
+            //string callBackData = $"reservedOnProcedure:{procedure.Id}";
+            string callBackData = new ProcedureCallBackDto("Procedure", "CreateAppointment", procedure.Id).ToString();
             InlineKeyboardButton[] buttons = new InlineKeyboardButton[]
             {
                 new InlineKeyboardButton("⬅️ Назад"){CallbackData = new CallBackDto("Procedure","ShowAllActiveForUser").ToString()},

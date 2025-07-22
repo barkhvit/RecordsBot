@@ -34,8 +34,7 @@ namespace RecordBot.Services
                     TelegramId = userFrom.Id,
                     FirstName = userFrom.FirstName,
                     LastName = userFrom.LastName,
-                    CurrentState = Models.UserState.first,
-                    RegistrationDate = DateTime.UtcNow
+                    RegistrationDate = DateTime.Now
                 };
                 await _userRepository.Add(newUser, cancellationToken);
                 return newUser;

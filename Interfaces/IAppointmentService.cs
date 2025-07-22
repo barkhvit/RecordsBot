@@ -9,9 +9,11 @@ namespace RecordBot.Interfaces
 {
     public interface IAppointmentService
     {
-        Task<Appointment?> CreateAppointment(long userId, Procedure procedure, DateTime dateTime, CancellationToken ct);
-        Task<IReadOnlyList<Appointment>> GetUserAppointments(long userId, CancellationToken ct);
+        Task<Appointment?> CreateAppointment(Guid userId, Procedure procedure, DateTime dateTime, CancellationToken ct);
+        Task<IReadOnlyList<Appointment>> GetUserAppointments(Guid userId, CancellationToken ct);
         Task<bool> CancelAppointment(Guid appoinmentId, CancellationToken ct);
         Task<Appointment?> GetAppointmentById(Guid Id, CancellationToken ct);
+        Task<IReadOnlyList<DateTime>> GetSlotsForAppointment(Guid procedureId, CancellationToken ct);
+        Task Add(Appointment appointment, CancellationToken ct);
     }
 }

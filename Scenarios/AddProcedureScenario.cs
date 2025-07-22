@@ -32,7 +32,7 @@ namespace RecordBot.Scenarios
             switch (context.CurrentStep)
             {
                 case null:
-                    await botClient.AnswerCallbackQuery(update.CallbackQuery.Id);
+                    await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
                     await botClient.EditMessageText(chatId, messageId, "Введите название услуги:",
                         replyMarkup: InlineKeyboardButton.WithCallbackData("Отменить действие", "cancel"),
                         cancellationToken:ct);
@@ -75,7 +75,7 @@ namespace RecordBot.Scenarios
                     if (Decimal.TryParse(text,out Decimal result))
                     {
                         context.Data["Стоимость"] = result;
-                        await botClient.SendMessage(chatId, "Введите длительность процедуры:",
+                        await botClient.SendMessage(chatId, "Введите длительность процедуры с минутах:",
                             cancellationToken: ct, replyMarkup: InlineKeyboardButton.WithCallbackData("Отменить действие", "cancel"));
                         context.CurrentStep = "Длительность";
                         scenarioResult = ScenarioResult.Transition;
@@ -122,7 +122,8 @@ namespace RecordBot.Scenarios
                         var procedure = (Procedure)context.Data["Процедура"];
                         await _procedureService.AddProcedure(procedure, ct);
                         await botClient.AnswerCallbackQuery(update.CallbackQuery.Id);
-                        await botClient.SendMessage(chatId, "Процедура добавлена", cancellationToken: ct);
+                        await botClient.SendMessage(chatId, "Процедура добавлена", cancellationToken: ct,
+                            replyMarkup: Keyboards.KeyBoardsForMainMenu.BackToMainMenu());
                         scenarioResult = ScenarioResult.Completed;
                     }
                     else

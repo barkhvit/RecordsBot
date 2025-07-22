@@ -12,7 +12,9 @@ namespace RecordBot.Interfaces
     {
         Task Add(Appointment appointment, CancellationToken ct);
         Task<IReadOnlyList<Appointment>> GetAllAppointments(CancellationToken ct);
-        Task<IReadOnlyList<Appointment>> GetAppointmentsByTelegramUserId(long telegramUserId, CancellationToken ct);
+        Task<IReadOnlyList<Appointment>> GetAppointmentsByUserId(Guid UserId, CancellationToken ct);
         Task<bool> Delete(Guid appointmentId, CancellationToken ct);
+        Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly dateOnly, CancellationToken ct);
+        Task<IReadOnlyList<Appointment>> GetActualAppointments(CancellationToken ct);
     }
 }

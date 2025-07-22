@@ -12,8 +12,8 @@ namespace RecordBot.Interfaces
         Task Add(FreePeriod freePeriod,CancellationToken cancellationToken);
         Task<IReadOnlyList<FreePeriod>> GetAllPeriods(CancellationToken cancellationToken);
         Task<IReadOnlyList<DateOnly>> GetDates(CancellationToken cancellationToken);
-        Task<IReadOnlyList<DateTime>> GetDateTimeForReserved(Procedure procedure, CancellationToken cancellationToken);
         Task<bool> SplitPeriod(FreePeriod freePeriod, DateTime dateTime, int duration, CancellationToken ct);
         Task<bool> Delete(FreePeriod freePeriod, CancellationToken ct);
+        Task<IReadOnlyList<FreePeriod>> GetPeriodsByDate(DateOnly dateOnly, CancellationToken ct);
     }
 }

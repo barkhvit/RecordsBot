@@ -13,5 +13,6 @@ namespace RecordBot.Interfaces
         Task<bool> Delete(Guid procedureId, CancellationToken cancellationToken);
         Task<IReadOnlyList<Procedure>> GetProcedures(CancellationToken cancellationToken);
         Task<Procedure?> GetProcedureById(Guid procedureId, CancellationToken cancellationToken);
+        Task ChangeActive(Guid procedureId, CancellationToken ct);
     }
 }

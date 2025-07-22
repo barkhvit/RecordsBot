@@ -28,7 +28,7 @@ namespace RecordBot.Repository
 
         public async Task Add(Appointment appointment, CancellationToken ct)
         {
-            string dirPath = Path.Combine(_storage, appointment.TelegramUserId.ToString());
+            string dirPath = Path.Combine(_storage, appointment.UserId.ToString());
             string filePath = Path.Combine(dirPath, $"{appointment.Id}.json");
             Directory.CreateDirectory(dirPath);
             string json = JsonSerializer.Serialize(appointment, new JsonSerializerOptions { WriteIndented = true });
@@ -49,10 +49,10 @@ namespace RecordBot.Repository
             }
             return appoimntments.AsReadOnly();
         }
-        public async Task<IReadOnlyList<Appointment>> GetAppointmentsByTelegramUserId(long telegramUserId, CancellationToken ct)
+        public async Task<IReadOnlyList<Appointment>> GetAppointmentsByUserId(Guid UserId, CancellationToken ct)
         {
             var appointments = await GetAllAppointments(ct);
-            return appointments.Where(a => a.TelegramUserId == telegramUserId).ToList();
+            return appointments.Where(a => a.UserId == UserId).ToList();
         }
 
         public async Task<bool> Delete(Guid appointmentId, CancellationToken ct)
@@ -61,11 +61,23 @@ namespace RecordBot.Repository
             var appointment = appointments.FirstOrDefault(a => a.Id == appointmentId);
             if (appointment!=null)
             {
-                string file = Path.Combine(_storage, appointment.TelegramUserId.ToString(), $"{appointment.Id}.json");
+                string file = Path.Combine(_storage, appointment.UserId.ToString(), $"{appointment.Id}.json");
                 File.Delete(file);
                 return true;
             }
             return false;
+        }
+
+        public async Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly dateOnly, CancellationToken ct)
+        {
+            var appoiintments = await GetAllAppointments(ct);
+            return appoiintments.Where(a => DateOnly.FromDateTime(a.dateTime) == dateOnly).ToList();
+        }
+
+        public async Task<IReadOnlyList<Appointment>> GetActualAppointments(CancellationToken ct)
+        {
+            var appointments = await GetAllAppointments(ct);
+            return appointments.Where(a => DateOnly.FromDateTime(a.dateTime) >= DateOnly.FromDateTime(DateTime.Now)).ToList();
         }
     }
 }

@@ -14,7 +14,6 @@ namespace RecordBot.Keyboards
     public static class Keyboards
     {
         
-
         //клавиатура выбора даты: "<--" "date" "-->"
         public static InlineKeyboardMarkup GetInlineDate(DateOnly date)
         {
@@ -33,20 +32,20 @@ namespace RecordBot.Keyboards
             List<InlineKeyboardButton[]> buttons = new List<InlineKeyboardButton[]>();
             buttons.Add(new InlineKeyboardButton[]
                 {
-                new InlineKeyboardButton("➕ Добавить ") { CallbackData = new DateCallBackDto("Date","Show",DateOnly.FromDateTime(DateTime.Today)).ToString() },//добавить дату GetInlineDate
-                new InlineKeyboardButton("👀 Посмотреть ") { CallbackData = new CallBackDto("FreePeriod","Show").ToString()} // показать все даты, доступные для резервирования
+                    new InlineKeyboardButton("➕ Добавить день") { CallbackData = new DateCallBackDto("Date","Show",DateOnly.FromDateTime(DateTime.Today)).ToString() },//добавить дату GetInlineDate
+                    new InlineKeyboardButton("➕ Добавить период") { CallbackData = new CallBackDto("FreePeriod", "Create").ToString()} // добавить произвольный период
+                    
                 });
 
             buttons.Add(new InlineKeyboardButton[]
                 {
-                new InlineKeyboardButton("⬅️ Назад") { CallbackData = new CallBackDto("AdminMenu", "Show").ToString() },//назад в меню админа
+                    new InlineKeyboardButton("👀 Посмотреть ") { CallbackData = new CallBackDto("FreePeriod","Show").ToString()}, // показать все даты, доступные для резервирования
+                    new InlineKeyboardButton("⬅️ Назад") { CallbackData = new CallBackDto("AdminMenu", "Show").ToString() },//назад в меню админа
                 });
 
             return new InlineKeyboardMarkup(buttons);
         }
 
-
-        
 
         //клавиатура администрирования новой услуги
         public static InlineKeyboardMarkup GetAddNewProcedure()
@@ -60,13 +59,8 @@ namespace RecordBot.Keyboards
         }
 
         
-
-        
-
-        
-
         //формирует клавиатуру для выбора дат, даты должны идти в строку по три
-        internal static InlineKeyboardMarkup GetKeybordDates(IEnumerable<DateOnly> datesForReserve, ReasonShowDates reasonShowDates)
+        public static InlineKeyboardMarkup GetKeybordDates(IEnumerable<DateOnly> datesForReserve, ReasonShowDates reasonShowDates)
         {
             // в зависимости от reasonShowDates готовим callBackData
             string callBackData = reasonShowDates switch
@@ -76,7 +70,7 @@ namespace RecordBot.Keyboards
             };
             // Преобразуем даты в кнопки с callback данными
             var buttons = datesForReserve.Select(date => InlineKeyboardButton.WithCallbackData(
-                text: date.ToString("dd.MM.yyyy"),
+                text: date.ToString("dd.MM.yyyy "),
                 callbackData: $"{callBackData}:{date}")).ToList();
 
             //группируем в ряд по три

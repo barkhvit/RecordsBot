@@ -21,6 +21,11 @@ namespace RecordBot.Services
             await _procedureRepository.Add(procedure, cancellationToken);
         }
 
+        public async Task ChangeActive(Guid procedureId, CancellationToken ct)
+        {
+            await _procedureRepository.ChangeActive(procedureId, ct);
+        }
+
         public async Task<bool> DeleteProcedure(Guid id, CancellationToken cancellationToken)
         {
             var isDelete = await _procedureRepository.Delete(id, cancellationToken);

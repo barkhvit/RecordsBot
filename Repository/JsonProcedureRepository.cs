@@ -60,5 +60,11 @@ namespace RecordBot.Repository
             var procedures = await GetProcedures(cancellationToken);
             return procedures.FirstOrDefault(p => p.Id == procedureId);
         }
+
+        public async Task ChangeActive(Guid procedureId, CancellationToken ct)
+        {
+            var procedure = await GetProcedureById(procedureId, ct);
+            procedure.isActive = !procedure.isActive;
+        }
     }
 }

@@ -35,7 +35,7 @@ namespace RecordBot.Handlers
             _freePeriodService = freePeriodService;
             _appointmentService = appointmentService;
             _procedureService = procedureService;
-            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService);
+            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService,userservice);
             _commandsForAdmin = new CommandsForAdmin(_telegramBotClient, appointmentService, procedureService);
             _commandsForMainMenu = new CommandsForMainMenu(_telegramBotClient, appointmentService, procedureService);
         }

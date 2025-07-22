@@ -12,7 +12,6 @@ namespace RecordBot.Models
         public long TelegramId { get; set; }
         public string FirstName { get; set; }
         public string? LastName { get; set; }
-        public UserState CurrentState { get; set; }
         public DateTime RegistrationDate { get; set; }
     }
 }

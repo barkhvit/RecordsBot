@@ -1,10 +1,8 @@
 ﻿using RecordBot.Commands;
+using RecordBot.DataAccess;
 using RecordBot.Handlers;
 using RecordBot.Interfaces;
 using RecordBot.Repository;
-using RecordBot.Scenario;
-using RecordBot.Scenario.CreateProcedure;
-using RecordBot.Scenario.InfoStorage;
 using RecordBot.Scenarios;
 using RecordBot.Services;
 using Telegram.Bot;
@@ -19,33 +17,35 @@ namespace RecordBot
             string token = Environment.GetEnvironmentVariable("TELEGRAM_RecordsBOT_TOKEN", EnvironmentVariableTarget.User);
             ITelegramBotClient botClient = new TelegramBotClient(token);
 
+            //база данных
+            string connectionString = "User ID=postgres;Password=Alekseev4+;Host=localhost;Port=5432;Database=RecordBot;Include Error Detail=true";
+            IDataContextFactory<DBContext> dataContextFactory = new DataContextFactory(connectionString);
             
-
             //репозитории
             IScenarioContextRepository scenarioContextRepository = new InMemoryScenarioContextRepository();
-            IUserRepository userRepository = new JsonUserRepository("users");
-            IFreePeriodRepository freePeriodRepository = new JsonFreePeriodRepository("FreePeriods");
-            IProcedureRepository procedureRepository = new JsonProcedureRepository("Procedures");
-            IAppointmentRepository appointmentRepository = new JsonAppointmentRepository("Appointments");
+            IUserRepository userRepository = new SqlUserRepository(dataContextFactory);
+            IFreePeriodRepository freePeriodRepository = new SqlFreePeriodRepository(dataContextFactory);
+            IProcedureRepository procedureRepository = new SqlProcedureRepository(dataContextFactory);
+            IAppointmentRepository appointmentRepository = new SqlAppointmentRepository(dataContextFactory);
 
             //сервисы
             IUserService userService = new UserService(userRepository);
             IFreePeriodService freePeriodService = new FreePeriodService(freePeriodRepository);
             IProcedureService procedureService = new ProcedureService(procedureRepository);
-            ICreateProcedureService createProcedureService = new CreateProcedureService(procedureService);
             IAppointmentService appointmentService = new AppointmentsService(appointmentRepository, freePeriodService,procedureService);
-            InfoRepositoryService infoRepositoryService = new InfoRepositoryService();
 
             //сценарии
             IEnumerable<IScenario> scenarios = new List<IScenario>
             {
-                new AddFreePeriodScenario(), 
-                new AddProcedureScenario(procedureService)
+                new AddFreePeriodScenario(freePeriodService), 
+                new AddProcedureScenario(procedureService),
+                new AddAppointmentScenario(appointmentService, procedureService,freePeriodService, userService),
+                new SendMessageToAdminScenario(userService)
             };
 
             //контроллер ответов от пользователя
-            var botController = new BotController(botClient, userService, freePeriodService, procedureService, 
-                createProcedureService, appointmentService, infoRepositoryService, scenarios, scenarioContextRepository);
+            var botController = new BotController(botClient, userService, freePeriodService, procedureService
+                , appointmentService, scenarios, scenarioContextRepository);
 
             //CancellationToken
             var _cts = new CancellationTokenSource();

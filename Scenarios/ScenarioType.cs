@@ -8,6 +8,7 @@ namespace RecordBot.Scenarios
 {
     public enum ScenarioType
     {
-        None, AddPeriod, AddProcedure
+        None, AddPeriod, AddProcedure, AddAppointment,
+        SendMessageToAdmin
     }
 }

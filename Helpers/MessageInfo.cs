@@ -23,5 +23,20 @@ namespace RecordBot.Helpers
                 _ => throw new InvalidOperationException("Неизвестный тип сообщения от пользователя")
             };
         }
+
+        public static string? GetUserName(Update update)
+        {
+
+            return update switch
+            {
+                { Type: UpdateType.Message, Message: var msg }
+                    => msg.From.Username,
+
+                { Type: UpdateType.CallbackQuery, CallbackQuery: var cbq }
+                    => cbq.From.Username,
+
+                _ => throw new InvalidOperationException("Неизвестный тип сообщения от пользователя")
+            };
+        }
     }
 }

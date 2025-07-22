@@ -1,5 +1,4 @@
 ﻿using RecordBot.Interfaces;
-using RecordBot.Scenario.InfoStorage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +15,11 @@ namespace RecordBot.Commands
 {
     public class CommandsForAppointments : Commands
     {
-        public CommandsForAppointments(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService)
+        private readonly IUserService _userService;
+        public CommandsForAppointments(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService, IUserService userService)
             : base(telegramBotClient, appointmentService, procedureService)
         {
+            _userService = userService;
         }
 
         //показать все записи пользователя CallBackDto("Appointment","ShowAll")
@@ -26,8 +27,9 @@ namespace RecordBot.Commands
         {
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
+            var user = await _userService.GetUser(userId, ct);
 
-            var records = await _appointmentService.GetUserAppointments(userId, ct);
+            var records = await _appointmentService.GetUserAppointments(user.Id, ct);
             string textMessage = records == null || records.Count == 0 ? "У вас нет записей." : "Ваши записи:";
             InlineKeyboardMarkup? inlineKeyboardMarkup = Keyboards.KeyboardsForMyRecords.GetShowMyRecordsKeybord(records);
 
@@ -122,7 +124,8 @@ namespace RecordBot.Commands
                         messageId: messageId,
                         chatId: chatId,
                         text: "Запись удалена",
-                        cancellationToken:ct);
+                        cancellationToken:ct,
+                        replyMarkup: Keyboards.KeyBoardsForMainMenu.MainMenu());
                 }
             }
         }

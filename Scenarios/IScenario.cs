@@ -13,7 +13,5 @@ namespace RecordBot.Scenarios
     {
         bool CanHandle(ScenarioType scenarioType);
         Task<ScenarioResult> HandleScenarioAsync(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct);
-
-        
     }
 }

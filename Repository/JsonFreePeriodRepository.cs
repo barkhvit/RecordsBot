@@ -46,7 +46,7 @@ namespace RecordBot.Repository
                     if (item != null) freePeriods.Add(item);
                 }
             }
-            return freePeriods.AsReadOnly();
+            return freePeriods.Where(p => p.Date>=DateOnly.FromDateTime(DateTime.Now)).ToList().AsReadOnly();
         }
         
 
@@ -57,22 +57,7 @@ namespace RecordBot.Repository
             return dates;
         }
 
-        //выводит в формате DateTime возможные слоты для бронирования
-        public async Task<IReadOnlyList<DateTime>> GetDateTimeForReserved(Procedure procedure, CancellationToken cancellationToken)
-        {
-            List<DateTime> dateTimes = new List<DateTime>();
-            var freePeriods = await GetAllPeriods(cancellationToken);
-            foreach(FreePeriod freePeriod in freePeriods)
-            {
-                DateTime currentDateTime = new DateTime(freePeriod.Date, freePeriod.StartTime);
-                while(currentDateTime.AddMinutes(procedure.DurationMinutes)<=new DateTime(freePeriod.Date, freePeriod.FinishTime))
-                {
-                    dateTimes.Add(currentDateTime);
-                    currentDateTime = currentDateTime.AddMinutes(procedure.DurationMinutes);
-                }
-            }
-            return dateTimes.AsReadOnly();
-        }
+        
 
         //разделение периода
         public async Task<bool> SplitPeriod(FreePeriod freePeriod, DateTime dateTime, int duration, CancellationToken ct)
@@ -126,5 +111,10 @@ namespace RecordBot.Repository
             }
         }
 
+        public async Task<IReadOnlyList<FreePeriod>> GetPeriodsByDate(DateOnly dateOnly, CancellationToken ct)
+        {
+            var periods = await GetAllPeriods(ct);
+            return periods.Where(p => p.Date == dateOnly).ToList();
+        }
     }
 }

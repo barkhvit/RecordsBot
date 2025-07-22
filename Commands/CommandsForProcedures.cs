@@ -92,12 +92,11 @@ namespace RecordBot.Commands
             if (procedureCallBackDto.ProcedureId!=null)
             {
                 string messageText = "";
+                await _procedureService.ChangeActive((Guid)procedureCallBackDto.ProcedureId, cancellationToken);
                 var procedure = await _procedureService.GetProcedureByGuidId((Guid)procedureCallBackDto.ProcedureId, cancellationToken);
                 if (procedure != null)
                 {
-                    procedure.isActive = !procedure.isActive;
                     messageText = procedure.isActive == true ? "Процедура активна" : "Процедура помещена в архив";
-                    await _procedureService.AddProcedure(procedure, cancellationToken);
                     await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id);
                     await _telegramBotClient.EditMessageText(
                         chatId: update.CallbackQuery.Message.Chat.Id,

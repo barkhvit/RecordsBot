@@ -1,7 +1,9 @@
-﻿using RecordBot.Commands;
+﻿using RecordBot.CallBackModels;
+using RecordBot.Commands;
 using RecordBot.Helpers;
 using RecordBot.Interfaces;
-using RecordBot.Scenario.InfoStorage;
+using RecordBot.Keyboards;
+using RecordBot.Models;
 using RecordBot.Scenarios;
 using RecordBot.Services;
 using System;
@@ -9,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -36,15 +39,14 @@ namespace RecordBot.Handlers
         public event MessageEventHandler? OnHandleUpdateComplete;
 
         public BotController(ITelegramBotClient botClient, IUserService userService, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, ICreateProcedureService createProcedureService, IAppointmentService appointmentService, 
-            InfoRepositoryService infoRepositoryService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository)
+            IProcedureService procedureService, IAppointmentService appointmentService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository)
         {
             _botClient = botClient;
             _scenarios = scenarios;
             _scenarioContextRepository = scenarioContextRepository;
-            _replyToMessageUpdateHandler = new ReplyToMessageUpdateHandler(botClient, procedureService, createProcedureService);
+            _replyToMessageUpdateHandler = new ReplyToMessageUpdateHandler(botClient, procedureService);
             _messageUpdateHandler = new MessageUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
-            _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, createProcedureService, appointmentService, infoRepositoryService);
+            _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
         }
 
 
@@ -57,15 +59,14 @@ namespace RecordBot.Handlers
                 // Получаем данные из update с помощью pattern matching
                 var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
 
-                //регистрируем пользователя
-
-
                 //обработка Cancel - отмена сценария
                 if(Text == "/cancel" || Text == "cancel")
                 {
                     await _scenarioContextRepository.ResetContext(userId, cancellationToken);
                     await _botClient.AnswerCallbackQuery(update.CallbackQuery.Id);
-                    await _botClient.SendMessage(chatId, "Действие отменено", cancellationToken: cancellationToken);
+                    await _botClient.EditMessageText(chatId,messageId, "Действие отменено.", cancellationToken: cancellationToken);
+                    await _botClient.SendMessage(chatId, "Выберите действие:", cancellationToken: cancellationToken,
+                        replyMarkup: KeyBoardsForMainMenu.MainMenu());
                     return;
                 }
 
@@ -77,16 +78,31 @@ namespace RecordBot.Handlers
                     return;
                 }
 
-                //СЦЕНАРИИ
-                //создание процедуры(услуги)
-                if(Text == "Procedure:Create")
+                //ЗАПУСК СЦЕНАРИЕВ
+                if (Text != null)
                 {
-                    var newContext = new ScenarioContext(userId, ScenarioType.AddProcedure);
-                    await _scenarioContextRepository.SetContext(userId, newContext, cancellationToken);
-                    await ProcessScenario(newContext, update, cancellationToken);
+                    switch (Text)
+                    {
+                        case "Procedure:Create":    //создание процедуры(услуги)
+                            await SetNewContext(update, ScenarioType.AddProcedure, cancellationToken);
+                            return;
+
+                        case "FreePeriod:Create": //создание периода
+                            await SetNewContext(update, ScenarioType.AddPeriod, cancellationToken);
+                            return;
+
+                        case "MessageToAdmin:Create"://сценарий "Написать администратору"
+                            await SetNewContext(update, ScenarioType.SendMessageToAdmin, cancellationToken);
+                            return;
+                    }
+                    //создание записи
+                    if (Text == "Appointment:Create" || Text.Contains("Procedure:CreateAppointment"))
+                    {
+                        await SetNewContext(update, ScenarioType.AddAppointment, cancellationToken);
+                        return;
+                    }
                 }
-
-
+                
 
                 //в зависимости от типа Update переключаем в нужный обработчик
                 switch (update.Type)
@@ -120,6 +136,17 @@ namespace RecordBot.Handlers
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
+        }
+
+        private async Task SetNewContext(Update update, ScenarioType scenarioType, CancellationToken ct)
+        {
+            // Получаем данные из update с помощью pattern matching
+            var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
+            //создаем новый контекст
+            var newContext = new ScenarioContext(userId, scenarioType);
+            await _scenarioContextRepository.SetContext(userId, newContext, ct);
+            //запускаем сценарий
+            await ProcessScenario(newContext, update, ct);
         }
 
         private IScenario GetScenario(ScenarioType scenario)

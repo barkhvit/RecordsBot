@@ -2,7 +2,6 @@
 using RecordBot.Enums;
 using RecordBot.Interfaces;
 using RecordBot.Models;
-using RecordBot.Scenario.InfoStorage;
 using RecordBot.Services;
 using System;
 using System.Collections.Generic;
@@ -26,10 +25,8 @@ namespace RecordBot.Handlers
         private readonly IUserService _userservice;
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly IFreePeriodService _freePeriodService;
-        private readonly ICreateProcedureService _createProcedureService;
         private readonly IProcedureService _procedureService;
         private readonly IAppointmentService _appointmentService;
-        private readonly InfoRepositoryService _infoRepositoryService;
         private readonly CommandsForAppointments _commandsForAppointments;
         private readonly CommandsForAdmin _commandsForAdmin;
         private readonly CommandsForFreePeriod _commandsForFreePeriod;
@@ -37,16 +34,14 @@ namespace RecordBot.Handlers
         private readonly CommandsForMainMenu _commandsForMainMenu;
 
         public CallBackUpdateHandler(IUserService userservice, ITelegramBotClient telegramBotClient, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, ICreateProcedureService createProcedureService, IAppointmentService appointmentService, InfoRepositoryService infoRepositoryService)
+            IProcedureService procedureService, IAppointmentService appointmentService)
         {
             _userservice = userservice;
             _freePeriodService = freePeriodService;
             _telegramBotClient = telegramBotClient;
             _procedureService = procedureService;
-            _createProcedureService = createProcedureService;
             _appointmentService = appointmentService;
-            _infoRepositoryService = infoRepositoryService;
-            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService);
+            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService, userservice);
             _commandsForAdmin = new CommandsForAdmin(_telegramBotClient, appointmentService, procedureService);
             _commandsForFreePeriod = new CommandsForFreePeriod(_telegramBotClient, appointmentService, procedureService, _freePeriodService);
             _commandsForProcedures = new CommandsForProcedures(_telegramBotClient, appointmentService, procedureService);
@@ -115,143 +110,8 @@ namespace RecordBot.Handlers
                         break;
                 }
             }
-
-            
-            switch (_callBackQuery[0])
-            {
-
-               
-                //--------- ЗАПИСЬ НА ПРОЦЕДУРУ:
-                //case "showprocedureForReserved": await _commandsForProcedures.ShowProcedureCommand(procedureCallBackDto, cancellationToken, ReasonShowProcedure.reserved); break; //показать информацию о процедуре для ЗАПИСАТЬСЯ
-                case "reservedOnProcedure": await ReservedOnProcedureCommand_Date(update, _callBackQuery, cancellationToken); break; //пользователь выбрал процедуру и нажал Записаться
-                case "DateForReserved": await ReservedOnProcedureCommand_Time(update, _callBackQuery, cancellationToken); break;//пользователь выбрал дату для резервирования
-                case "TimeForReserved": await ReservedOnProcedureCommand_Finish(update, _callBackQuery, cancellationToken); break; //пользователь выбрал время для резервирования
-                case "reservedOnProcedureDone": await ReservedOnProcedureCommand_Done(update, _callBackQuery, cancellationToken); break;//пользователь подтвердил создание записи
-            }
         }
 
-        
-        
-
-        private async Task ReservedOnProcedureCommand_Done(Update update, string[] callBackQuery, CancellationToken ct)
-        {
-            //получаем процедуру, Дату и Время из хранилища
-            var context = await _infoRepositoryService.GetOrCreateContext(update.CallbackQuery.From.Id, ct);
-            var procedureId = (Guid)context.Data["процедура"];
-            var procedure = await _procedureService.GetProcedureByGuidId(procedureId, ct);
-            var dateForReserved = (DateOnly)context.Data["дата процедуры"];
-            var timeForReserved = (TimeOnly)context.Data["время процедуры"];
-
-            //создаем Appointment CreateAppointment
-            Appointment? appointment = await _appointmentService.CreateAppointment(update.CallbackQuery.From.Id, procedure, new DateTime(dateForReserved,timeForReserved), ct);
-
-            //если процедура создалась, то пишем что ОК, если нет, то не ок
-            string textMessage = appointment == null ? "ОШИБКА!!!" : "Вы записаны";
-            await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
-            await _telegramBotClient.EditMessageText(
-                chatId: update.CallbackQuery.Message.Chat.Id,
-                messageId: update.CallbackQuery.Message.MessageId,
-                text: textMessage,
-                cancellationToken: ct);
-        }
-
-        //пользователь выбрал процедуру, нажал кнопку ЗАПИСАТЬСЯ и выбрал определенную дату и время
-        private async Task ReservedOnProcedureCommand_Finish(Update update, string[] callBackQuery, CancellationToken ct)
-        {
-            // получаем из callBackQuery время бронирования
-            if(TimeOnly.TryParse(callBackQuery[1],out TimeOnly timeForReserved))
-            {
-                //получаем из временного хранилища процедуру, дату
-                var context = await _infoRepositoryService.GetOrCreateContext(update.CallbackQuery.From.Id, ct);
-                var procedureId = (Guid)context.Data["процедура"];
-                var procedure = await _procedureService.GetProcedureByGuidId(procedureId, ct);
-                var dateForReserved = (DateOnly)context.Data["дата процедуры"];
-
-                //время записываем во временное хранилище
-                await _infoRepositoryService.AddProcedureTimeInfo(update.CallbackQuery.From.Id, timeForReserved, ct);
-
-                //текстовое сообщение пользователю
-                string textMessage = $"Проверьте и нажмите ПОДТВЕРДИТЬ.\n\n" +
-                    $"Услуга:{procedure.Name}\nДата и время: {dateForReserved.ToString("dd.MM.yyyy")} {timeForReserved.ToString("HH:mm")}";
-
-                //клавиатура: отмена и ПОДТВЕРДИТЬ
-                InlineKeyboardMarkup inlineKeyboardMarkup = Keyboards.Keyboards.GetKeybordConfirmReserved();
-                //запрашиваем у пользователя подтверждение
-                await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
-                await _telegramBotClient.EditMessageText(
-                    messageId: update.CallbackQuery.Message.MessageId,
-                    chatId: update.CallbackQuery.Message.Chat.Id,
-                    text: textMessage,
-                    replyMarkup: inlineKeyboardMarkup,
-                    cancellationToken: ct);
-            }
-        }
-
-        //пользователь выбрал процедуру, нажал кнопку ЗАПИСАТЬСЯ и выбрал определенную дату
-        private async Task ReservedOnProcedureCommand_Time(Update update, string[] callBackQuery, CancellationToken cancellationToken)
-        {
-            // получаем из ответа дату и записываем ее во временное хранилище
-            if(DateOnly.TryParse(callBackQuery[1],out DateOnly dateForReserve))
-            {
-                //получаем из временного хранилища процедуру и сохраняем дату во временное хранилище
-                var context = await _infoRepositoryService.GetOrCreateContext(update.CallbackQuery.From.Id, cancellationToken);
-                await _infoRepositoryService.AddProcedureDateInfo(update.CallbackQuery.From.Id, dateForReserve, cancellationToken);
-                var procedureId = (Guid)context.Data["процедура"];
-                var procedure = await _procedureService.GetProcedureByGuidId(procedureId, cancellationToken);
-
-                //получаем доступные DateTime для резервирования
-                var dateTimeForReserve = await _freePeriodService.GetDateTimeForReserved(procedure, cancellationToken);
-
-                //выбираем TimeOnly по дате бронирования
-                var timesForReserve = dateTimeForReserve.Where(d => DateOnly.FromDateTime(d) == dateForReserve).
-                    Select(d => TimeOnly.FromDateTime(d)).ToList();
-                InlineKeyboardMarkup inlineKeyboardMarkup = Keyboards.Keyboards.GetKeybordTimes(timesForReserve, ReasonShowTimes.ForReservedProcedures, procedureId);
-
-                //отправляем пользователю сообщение с выбором времени для бронирования
-                await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
-                await _telegramBotClient.EditMessageText(
-                    chatId: update.CallbackQuery.Message.Chat.Id,
-                    messageId: update.CallbackQuery.Message.MessageId,
-                    text: $"{procedure.Name} на {dateForReserve.ToString("dd.MM.yyyy")}. Доступное время:",
-                    replyMarkup: inlineKeyboardMarkup,
-                    cancellationToken: cancellationToken);
-            }
-            
-        }
-
-
-        //пользователь выбрал процедуру и нажал кнопку ЗАПИСАТЬСЯ
-        private async Task ReservedOnProcedureCommand_Date(Update update, string[] callBackQuery, CancellationToken cancellationToken)
-        {
-            //получаем ID процедуры и саму процедуру
-            Procedure? procedure;
-            if(Guid.TryParse(callBackQuery[1], out Guid ProcedureId))
-            {  
-                // и саму процедуру
-                procedure = await _procedureService.GetProcedureByGuidId(ProcedureId, cancellationToken);
-
-                //записываем ID процедуры во временное хранилище
-                await _infoRepositoryService.AddProcedureIdInfo(update.CallbackQuery.From.Id, ProcedureId, cancellationToken);
-
-                //получаем доступные DateTime для резервирования
-                var dateTimeForReserve = await _freePeriodService.GetDateTimeForReserved(procedure, cancellationToken);
-
-                //отправляем пользователю доступные даты для резервирования
-                var datesForReserve = dateTimeForReserve.Select(dt => DateOnly.FromDateTime(dt)).Distinct();
-                InlineKeyboardMarkup inlineKeyboardMarkup = Keyboards.Keyboards.GetKeybordDates(datesForReserve, ReasonShowDates.ForReservedProcedures);
-
-                //отправляем пользователю доступные даты для резервирования
-                await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
-                await _telegramBotClient.EditMessageText(
-                    chatId:update.CallbackQuery.Message.Chat.Id,
-                    messageId: update.CallbackQuery.Message.MessageId,
-                    text: "Выберите дату:",
-                    replyMarkup: inlineKeyboardMarkup,
-                    cancellationToken: cancellationToken);
-            }
-        }
-
-        
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();

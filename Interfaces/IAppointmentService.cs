@@ -15,5 +15,7 @@ namespace RecordBot.Interfaces
         Task<Appointment?> GetAppointmentById(Guid Id, CancellationToken ct);
         Task<IReadOnlyList<DateTime>> GetSlotsForAppointment(Guid procedureId, CancellationToken ct);
         Task Add(Appointment appointment, CancellationToken ct);
+        Task<IReadOnlyList<Appointment>> GetActualyAppointments(CancellationToken ct);
+        Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly date, CancellationToken ct);
     }
 }

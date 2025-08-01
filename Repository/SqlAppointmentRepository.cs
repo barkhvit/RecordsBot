@@ -56,8 +56,10 @@ namespace RecordBot.Repository
         public async Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly dateOnly, CancellationToken ct)
         {
             using var context = _factory.CreateDataContext();
+            var startDateTime = dateOnly.ToDateTime(TimeOnly.MinValue);
+            var endDateTime = dateOnly.ToDateTime(TimeOnly.MaxValue);
             var appointments = await context.appointmentModels
-                .Where(a => DateOnly.FromDateTime(a.dateTime) == dateOnly)
+                .Where(a => a.dateTime >= startDateTime && a.dateTime < endDateTime)
                 .ToListAsync(ct);
             return appointments.Select(a => ModelMapper.MapFromModel(a)).ToList();
         }

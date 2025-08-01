@@ -22,6 +22,12 @@ namespace RecordBot.Services
             return await _userRepository.GetUserByTelegramId(telegarmUserId, cancellationToken);
         }
 
+        public Task<Models.User?> GetUserByUserId(Guid userId, CancellationToken ct)
+        {
+            var user = _userRepository.GetUser(userId, ct);
+            return user;
+        }
+
         public async Task<Models.User> RegisterUser(Update update, CancellationToken cancellationToken)
         {
             User userFrom = update.Message.From;

@@ -37,10 +37,12 @@ namespace RecordBot.Commands
         {
             var procedures = await _procedureService.GetProceduresByActive(true, cancellationToken);
             await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id);
+
+            string messagetext = reasonShowProcedure == ReasonShowProcedure.admin ? "Список активных процедур:" : "Выберите процедуру:";
             await _telegramBotClient.EditMessageText(
                 messageId: update.CallbackQuery.Message.MessageId,
                 chatId: update.CallbackQuery.Message.Chat.Id,
-                text: "Список активных процедур:",
+                text: messagetext,
                 cancellationToken: cancellationToken,
                 replyMarkup: Keyboards.KeyboardsForProcedures.GetAllProcedures(procedures, reasonShowProcedure));
         }
@@ -59,9 +61,12 @@ namespace RecordBot.Commands
                         Keyboards.KeyboardsForProcedures.GetKeybordForProcedure(procedure) : Keyboards.KeyboardsForProcedures.GetKeybordForReserved(procedure);
 
                     string status = procedure.isActive == true ? "активна" : "не активна";
-                    string messageText = $"Название: {procedure.Name}\nОписание: {procedure.Description}\n" +
-                                    $"Стоимость: {procedure.Price} рублей\nДлительность: {procedure.DurationMinutes} минут." +
-                                    $"\nСтатус: {status}";
+                    string messageText = reasonShowProcedure == ReasonShowProcedure.admin ?
+                        $"Название: {procedure.Name}\nОписание: {procedure.Description}\n" +
+                        $"Стоимость: {procedure.Price.ToString("0")} рублей\nДлительность: {procedure.DurationMinutes} минут.\nСтатус: {status}" :
+                        $"Название: {procedure.Name}\nОписание: {procedure.Description}\n" +
+                        $"Стоимость: {procedure.Price.ToString("0")} рублей\nДлительность: {procedure.DurationMinutes} минут.";
+
                     await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id);
                     await _telegramBotClient.EditMessageText(
                         chatId: update.CallbackQuery.Message.Chat.Id,

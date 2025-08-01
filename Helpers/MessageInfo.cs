@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types;
+using Telegram.Bot;
 
 namespace RecordBot.Helpers
 {
@@ -37,6 +38,12 @@ namespace RecordBot.Helpers
 
                 _ => throw new InvalidOperationException("Неизвестный тип сообщения от пользователя")
             };
+        }
+
+        public static async Task<string?> GetUsernameByTelegramId(long telegramId, ITelegramBotClient botClient, CancellationToken ct)
+        {
+            Chat userChat = await botClient.GetChat(telegramId, ct);
+            return userChat.Username;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using RecordBot.Commands;
+﻿using RecordBot.BackGroundTask;
+using RecordBot.Commands;
 using RecordBot.DataAccess;
 using RecordBot.Handlers;
 using RecordBot.Interfaces;
@@ -53,6 +54,18 @@ namespace RecordBot
             //подписываем на методы делегаты - события
             botController.OnHandleUpdateStarted += StartMessage;
             botController.OnHandleUpdateComplete += EndMessage;
+
+            //1. Создаем runner для фоновых задач
+            var backgroundTaskRunner = new BackGroundTaskRunner();
+
+            //2. Регистрируем задачу сброса сценариев
+            //    Таймаут - 1 час, передаем репозиторий и клиент бота
+            backgroundTaskRunner.AddTask(new NotificationBackGroundTask(appointmentService, userService, botClient));
+
+            //3. Запускаем фоновые задачи
+            //    Передаем токен отмены, чтобы задачи могли остановиться при завершении приложения
+            backgroundTaskRunner.StartTasks(_cts.Token);
+
 
             //прослушка бота
             try

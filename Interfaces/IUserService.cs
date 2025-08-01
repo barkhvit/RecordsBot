@@ -10,6 +10,7 @@ namespace RecordBot.Interfaces
     public interface IUserService
     {
         Task<User> RegisterUser(Telegram.Bot.Types.Update update, CancellationToken cancellationToken);
-        Task<User?> GetUser(long telegarmUserId,CancellationToken cancellation); 
+        Task<User?> GetUser(long telegarmUserId,CancellationToken cancellation);
+        Task<User?> GetUserByUserId(Guid userId, CancellationToken ct);
     }
 }

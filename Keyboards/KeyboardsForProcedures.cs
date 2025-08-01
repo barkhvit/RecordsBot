@@ -15,12 +15,18 @@ namespace RecordBot.Keyboards
         //клавиатура после выбора команды /admin - админская клавиатура
         public static InlineKeyboardMarkup GetAdminKeybord()
         {
-            InlineKeyboardButton[] buttons = new InlineKeyboardButton[]
+            List<InlineKeyboardButton[]> btn = new List<InlineKeyboardButton[]>();
+            btn.Add(new[]
             {
                 new InlineKeyboardButton("✂️ Услуги") { CallbackData = new CallBackDto("Procedure","Admin").ToString()},
                 new InlineKeyboardButton("📅 Периоды работы  ") { CallbackData = new CallBackDto("FreePeriod","Admin").ToString()}
-            };
-            return new InlineKeyboardMarkup(buttons);
+            });
+            btn.Add(new[]
+            {
+                new InlineKeyboardButton("🗒️ Записи ") {CallbackData = new CallBackDto("Appointment","ShowAdminMenu").ToString()}
+            });
+
+            return new InlineKeyboardMarkup(btn);
         }
 
         //клавиатура для редактирования процедуры (кнопка Назад(показать все процедуры), кнопка сделать акт/неакт)

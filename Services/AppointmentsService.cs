@@ -117,5 +117,16 @@ namespace RecordBot.Services
             await _appointmentRepository.Add(appointment, ct);
         }
 
+        public async Task<IReadOnlyList<Appointment>> GetActualyAppointments(CancellationToken ct)
+        {
+            var appointments = await _appointmentRepository.GetActualAppointments(ct);
+            return appointments;
+        }
+
+        public async Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly date, CancellationToken ct)
+        {
+            var appointments = await _appointmentRepository.GetAppointmentsByDate(date, ct);
+            return appointments;
+        }
     }
 }

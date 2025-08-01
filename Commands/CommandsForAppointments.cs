@@ -10,6 +10,9 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using RecordBot.CallBackModels;
 using RecordBot.Models;
+using System.Security.Cryptography;
+using System.Globalization;
+using RecordBot.Helpers;
 
 namespace RecordBot.Commands
 {
@@ -127,6 +130,105 @@ namespace RecordBot.Commands
                         cancellationToken:ct,
                         replyMarkup: Keyboards.KeyBoardsForMainMenu.MainMenu());
                 }
+            }
+        }
+
+        //меню администрирования записей
+        internal async Task ShowAdminMenu(Update update, CancellationToken ct)
+        {
+            // Получаем данные из update с помощью pattern matching
+            var (chatId, userId, messageId, text) = GetMessageInfo(update);
+
+            List<InlineKeyboardButton[]> btn = new List<InlineKeyboardButton[]>
+            {
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("👀 Посмотреть ",new CallBackDto("Appointment","ShowForAdminDates").ToString()),
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать ",new CallBackDto("Appointment","EditAdmin").ToString())
+                },
+                new InlineKeyboardButton[]
+                {
+                    InlineKeyboardButton.WithCallbackData("⬅️ Назад",new CallBackDto("AdminMenu","Show").ToString())
+                }
+            };
+
+            await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
+            await _telegramBotClient.EditMessageText(chatId, messageId, "Выберите действие с записями:",
+                cancellationToken: ct,
+                replyMarkup: new InlineKeyboardMarkup(btn));
+        }
+
+        //выводим администратору список дат, где есть записи
+        internal async Task ShowForAdminDates(Update update, CancellationToken ct)
+        {
+            // Получаем данные из update с помощью pattern matching
+            var (chatId, userId, messageId, text) = GetMessageInfo(update);
+
+            var appointments = await _appointmentService.GetActualyAppointments(ct);
+            var dates = appointments.Select(a => DateOnly.FromDateTime(a.dateTime)).Distinct().ToList();
+            string textMessage = "Записей нет.";
+            //список кнопок делаем по три в ряд
+            List<List<InlineKeyboardButton>> inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
+
+            if (appointments != null && appointments.Count > 0)
+            {
+                textMessage = "Выберите дату:";
+                //список кнопок 
+                var allButtons = dates.Select(d => InlineKeyboardButton.WithCallbackData($"{d.ToString("dd.MM.yyyy")}",
+                    new CallBackDto("Appointment", $"ShowByDate_{d.ToString("dd.MM.yyyy")}").ToString())).ToList();
+
+                for (int i = 0; i < allButtons.Count; i += 3)
+                {
+                    List<InlineKeyboardButton> row = allButtons.Skip(i).Take(3).ToList();
+                    inlineKeyboardButtons.Add(row);
+                }
+                
+            }
+            inlineKeyboardButtons.Add(new List<InlineKeyboardButton>
+            {
+                InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto("MainMenu","Show").ToString()),
+                InlineKeyboardButton.WithCallbackData("Меню администратора",new CallBackDto("AdminMenu","Show").ToString())
+            });
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup(inlineKeyboardButtons);
+            await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
+            await _telegramBotClient.EditMessageText(chatId, messageId, textMessage, cancellationToken: ct,
+                replyMarkup: inlineKeyboardMarkup);
+        }
+
+        internal async Task ShowAppointmentsByDate(Update update, CancellationToken cancellationToken)
+        {
+            // Получаем данные из update с помощью pattern matching
+            var (chatId, userId, messageId, text) = GetMessageInfo(update);
+
+            //получаем дату из строки
+            if(DateOnly.TryParseExact(text.Substring(text.Length-10,10),"dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None,out DateOnly date))
+            {
+                var appointments = await _appointmentService.GetAppointmentsByDate(date, cancellationToken);
+                string textMessage = "";
+                if (appointments == null)
+                {
+                    textMessage = $"На {date.ToString("dd.MM.yyyy")} нет записей";
+                }
+                else
+                {
+                    textMessage = $"Записи на {date.ToString("dd.MM.yyyy")}:";
+                    foreach(var a in appointments)
+                    {
+                        var procedure = await _procedureService.GetProcedureByGuidId(a.ProcedureId, cancellationToken);
+                        var user = await _userService.GetUserByUserId(a.UserId, cancellationToken);
+                        var userName = await MessageInfo.GetUsernameByTelegramId(user.TelegramId, _telegramBotClient, cancellationToken);
+
+                        string userLink = userName != null ? $"\n{TimeOnly.FromDateTime(a.dateTime)} - " +
+                            $"{user.FirstName} {user.LastName} (<a href=\"tg://user?id={user.TelegramId}\">{userName}</a>) - {procedure.Name}":
+                            $"\n{TimeOnly.FromDateTime(a.dateTime)} - {user.FirstName} {user.LastName} - {procedure.Name}"; 
+
+                        textMessage += userLink;
+                    }
+                }
+                await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
+                await _telegramBotClient.EditMessageText(chatId, messageId, textMessage, cancellationToken: cancellationToken,
+                    replyMarkup:Keyboards.KeyBoardsForMainMenu.BackToMainMenu(),
+                    parseMode: ParseMode.Html);
             }
         }
     }

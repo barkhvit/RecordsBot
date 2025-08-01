@@ -34,6 +34,9 @@ namespace RecordBot.Handlers
         private readonly CallBackUpdateHandler _callBackUpdateHandler; //колбэки
         private readonly ReplyToMessageUpdateHandler _replyToMessageUpdateHandler; //текстовые ответы на сообщения 
 
+        //сервисы
+        private readonly IUserService _userService;
+
         //события
         public event MessageEventHandler? OnHandleUpdateStarted;
         public event MessageEventHandler? OnHandleUpdateComplete;
@@ -47,6 +50,7 @@ namespace RecordBot.Handlers
             _replyToMessageUpdateHandler = new ReplyToMessageUpdateHandler(botClient, procedureService);
             _messageUpdateHandler = new MessageUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
             _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
+            _userService = userService;
         }
 
 
@@ -54,10 +58,14 @@ namespace RecordBot.Handlers
         //определяем тип апдейта и перенаправляем в нужный Handler
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
+            // Получаем данные из update с помощью pattern matching
+            var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
+            var user = await _userService.GetUser(userId, cancellationToken);
+            OnHandleUpdateStarted.Invoke(chatId, user.FirstName, Text);
+
             try
             {
-                // Получаем данные из update с помощью pattern matching
-                var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
+                
 
                 //обработка Cancel - отмена сценария
                 if(Text == "/cancel" || Text == "cancel")
@@ -108,7 +116,6 @@ namespace RecordBot.Handlers
                 switch (update.Type)
                 {
                     case Telegram.Bot.Types.Enums.UpdateType.Message:
-                        OnHandleUpdateStarted.Invoke(update.Message.From.Id, update.Message.From.FirstName, update.Message.Text);
                         //если текстовое сообщение - это ответ на другое собщение
                         if (update.Message.ReplyToMessage != null)
                         {
@@ -116,7 +123,6 @@ namespace RecordBot.Handlers
                             return;
                         }
                         await _messageUpdateHandler.HandleUpdateAsync(botClient, update, cancellationToken);
-                        OnHandleUpdateComplete.Invoke(update.Message.From.Id, update.Message.From.FirstName, update.Message.Text);
                         return;
                     case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
                         await _callBackUpdateHandler.HandleUpdateAsync(botClient, update, cancellationToken);
@@ -125,12 +131,19 @@ namespace RecordBot.Handlers
                         await botClient.SendMessage(update.Message.Chat.Id, "Неизвестная команда", cancellationToken: cancellationToken);
                         break;
                 }
+
+
             }
+
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-            
+
+            finally
+            {
+                OnHandleUpdateComplete.Invoke(chatId, user.FirstName, Text);
+            }
         }   
 
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)

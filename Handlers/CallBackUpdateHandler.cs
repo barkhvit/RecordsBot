@@ -87,6 +87,10 @@ namespace RecordBot.Handlers
                             case "ShowAll": await _commandsForAppointments.ShowMyRecordsCommand(update, cancellationToken); break;//показать все записи пользователя
                             case "Delete": await _commandsForAppointments.DeleteAppoinment(update, cancellationToken); break;//удалить запись
                             case "Show": await _commandsForAppointments.AppointmentDetailShowCommand(update, appointmentCallBackDto, cancellationToken); break; //показать детально запись c кнопкой отмена
+                            case "ShowAdminMenu": await _commandsForAppointments.ShowAdminMenu(update, cancellationToken); break;//администрирование записей
+                            case "ShowForAdminDates": await _commandsForAppointments.ShowForAdminDates(update, cancellationToken); break; //показать даты с акт записями
+                            case string s when s.StartsWith("ShowByDate"): await _commandsForAppointments.ShowAppointmentsByDate(update, cancellationToken); break;
+                            case "EditAdmin": break;
                         }
                         break;
                     case "Date": var dateCallBackDto = DateCallBackDto.FromString(update.CallbackQuery.Data);

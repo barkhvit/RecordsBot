@@ -16,5 +16,6 @@ namespace RecordBot.DataAccess
         public ITable<FreePeriodModel> freePeriodModel => this.GetTable<FreePeriodModel>();
         public ITable<ProcedureModel> procedureModel => this.GetTable<ProcedureModel>();
         public ITable<UserModel> userModel => this.GetTable<UserModel>();
+        public ITable<NotificationModel> notificationModel => this.GetTable<NotificationModel>();
     }
 }

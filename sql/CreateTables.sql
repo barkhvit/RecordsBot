@@ -35,3 +35,31 @@ CREATE TABLE Appointments (
 CREATE INDEX idx_users_telegramid ON Users(TelegramId);
 CREATE INDEX idx_appointments_telegramuserid ON Appointments(TelegramUserId);
 CREATE INDEX idx_freeperiods_date ON FreePeriods(Date);
+
+
+
+--Таблица Notification
+CREATE TABLE notification (
+    id UUID PRIMARY KEY,
+    userid UUID NOT NULL,
+    type TEXT NOT NULL,
+    text TEXT NOT NULL,
+    scheduledat TIMESTAMP NOT NULL,
+    isnotified BOOLEAN NOT NULL DEFAULT false,
+    notifiedat TIMESTAMP NULL,
+    
+    -- Внешний ключ для связи с таблицей todouser
+    CONSTRAINT fk_notification_userid 
+        FOREIGN KEY (userid) 
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
+-- Опционально: создание индекса для улучшения производительности запросов по userid
+CREATE INDEX idx_notification_userid ON notification(userid);
+
+-- Опционально: создание индекса для запросов по scheduledat
+CREATE INDEX idx_notification_scheduledat ON notification(scheduledat);
+
+-- Опционально: создание индекса для запросов по isnotified
+CREATE INDEX idx_notification_isnotified ON notification(isnotified);

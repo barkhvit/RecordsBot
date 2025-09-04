@@ -34,6 +34,7 @@ namespace RecordBot
             IFreePeriodService freePeriodService = new FreePeriodService(freePeriodRepository);
             IProcedureService procedureService = new ProcedureService(procedureRepository);
             IAppointmentService appointmentService = new AppointmentsService(appointmentRepository, freePeriodService,procedureService);
+            INotificationService notificationService = new NotificationService(dataContextFactory);
 
             //сценарии
             IEnumerable<IScenario> scenarios = new List<IScenario>
@@ -58,11 +59,14 @@ namespace RecordBot
             //1. Создаем runner для фоновых задач
             var backgroundTaskRunner = new BackGroundTaskRunner();
 
-            //2. Регистрируем задачу сброса сценариев
+            //2. Регистрируем задачу создания сообщения о завтрашних записях
             //    Таймаут - 1 час, передаем репозиторий и клиент бота
-            backgroundTaskRunner.AddTask(new NotificationBackGroundTask(appointmentService, userService, botClient));
+            backgroundTaskRunner.AddTask(new TomorrowAppointmentBackGroundTask(appointmentService, notificationService, procedureService));
 
-            //3. Запускаем фоновые задачи
+            //3. Фоновая задача отправки нотификаций
+            backgroundTaskRunner.AddTask(new SendNotificationBackgroundTask(notificationService, botClient));
+
+            //. Запускаем фоновые задачи
             //    Передаем токен отмены, чтобы задачи могли остановиться при завершении приложения
             backgroundTaskRunner.StartTasks(_cts.Token);
 

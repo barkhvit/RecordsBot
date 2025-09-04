@@ -12,6 +12,32 @@ namespace RecordBot.DataAccess
 {
     internal static class ModelMapper
     {
+        public static Notification MapFromModel(NotificationModel model)
+        {
+            return new Notification
+            {
+                Id = model.Id,
+                User = model.User != null ? ModelMapper.MapFromModel(model.User) : null,
+                Type = model.Type,
+                Text = model.Text,
+                ScheduledAt = model.ScheduledAt,
+                IsNotified = model.IsNotified,
+                NotifiedAt = model.NotifiedAt
+            };
+        }
+        public static NotificationModel MapToModel(Notification entity)
+        {
+            return new NotificationModel
+            {
+                Id = entity.Id,
+                UserId = entity.User.Id,
+                Type = entity.Type,
+                Text = entity.Text,
+                ScheduledAt = entity.ScheduledAt,
+                IsNotified = entity.IsNotified,
+                NotifiedAt = entity.NotifiedAt
+            };
+        }
         public static Appointment MapFromModel(AppointmentModel model)
         {
             return new Appointment

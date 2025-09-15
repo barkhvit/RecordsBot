@@ -16,10 +16,12 @@ namespace RecordBot
         {
             //бот-клиент @BarkhvitRecordsBot
             string token = Environment.GetEnvironmentVariable("TELEGRAM_RecordsBOT_TOKEN", EnvironmentVariableTarget.User);
+            //string token = Environment.GetEnvironmentVariable("BotForTesting", EnvironmentVariableTarget.User);
             ITelegramBotClient botClient = new TelegramBotClient(token);
 
             //база данных
             string connectionString = "User ID=postgres;Password=Alekseev4+;Host=localhost;Port=5432;Database=RecordBot;Include Error Detail=true";
+             
             IDataContextFactory<DBContext> dataContextFactory = new DataContextFactory(connectionString);
             
             //репозитории

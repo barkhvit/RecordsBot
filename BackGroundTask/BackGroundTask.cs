@@ -11,7 +11,7 @@ namespace RecordBot.BackGroundTask
         protected abstract Task Execute(CancellationToken ct);
         public async Task Start(CancellationToken ct)
         {
-            while(!ct.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
                 try
                 {
@@ -21,11 +21,11 @@ namespace RecordBot.BackGroundTask
                     Console.WriteLine($"{name}. Start delay {delay}");
                     await Task.Delay(delay, ct);
                 }
-                catch(OperationCanceledException) when (ct.IsCancellationRequested)
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
                     // нормально закрываемся при отмене
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine($"{name}. Error: {ex}");
                     await Task.Delay(TimeSpan.FromSeconds(1), ct);
@@ -33,4 +33,5 @@ namespace RecordBot.BackGroundTask
             }
         }
     }
+
 }

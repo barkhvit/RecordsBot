@@ -1,4 +1,5 @@
-﻿using RecordBot.CallBackModels;
+﻿using LinqToDB.Common;
+using RecordBot.CallBackModels;
 using RecordBot.Enums;
 using RecordBot.Helpers;
 using RecordBot.Interfaces;
@@ -15,6 +16,8 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Configuration;
+using Telegram.Bot.Types.Enums;
 
 namespace RecordBot.Scenarios
 {
@@ -173,11 +176,33 @@ namespace RecordBot.Scenarios
             var (chatId, userId, messageId, text) = MessageInfo.GetMessageInfo(update);
 
             var appointment = (Appointment)context.Data["Запись"];
+            var userApp = await _userService.GetUserByUserId(appointment.UserId, ct);
+            var procApp = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId, ct);
+
             await _appointmentService.Add(appointment, ct);
             await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
             await botClient.EditMessageText(chatId,messageId, "Вы записаны, информацию о записи можете посмотреть в Главном меню - Мои записи",
                 cancellationToken: ct,
                 replyMarkup: Keyboards.KeyBoardsForMainMenu.MainMenu());
+
+            //сообщение администраторам
+            string? arrayAdmins = ConfigurationManager.AppSettings["AdminTelegramId"];
+            if (arrayAdmins != null)
+            {
+                long[] admins = arrayAdmins.Split(',')
+                    .Select(long.Parse)
+                    .ToArray();
+                foreach(var adm in admins)
+                {
+                    string link = await MessageInfo.GetUserProfileLinkAsync(userApp.TelegramId, botClient, ct);
+                    string textMessage = $"Новая запись:\n{userApp.FirstName} {userApp.LastName}" +
+                        $"({link})\n" +
+                        $"{procApp.Name} {appointment.dateTime}";
+
+                    await botClient.SendMessage(adm, textMessage,
+                        cancellationToken: ct);
+                }
+            }
         }
     }
 }

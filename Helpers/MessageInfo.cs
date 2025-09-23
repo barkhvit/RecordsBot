@@ -45,5 +45,30 @@ namespace RecordBot.Helpers
             Chat userChat = await botClient.GetChat(telegramId, ct);
             return userChat.Username;
         }
+
+        
+
+        public static async Task<string> GetUserProfileLinkAsync(long telegramId, ITelegramBotClient botClient, CancellationToken ct)
+        {
+            try
+            {
+                var chat = await botClient.GetChat(telegramId, cancellationToken:ct);
+
+                if (!string.IsNullOrEmpty(chat.Username))
+                {
+                    // Если у пользователя есть username
+                    return $"https://t.me/{chat.Username}";
+                }
+                else
+                {
+                    // Если username нет - используем deep link
+                    return $"tg://user?id={telegramId}";
+                }
+            }
+            catch
+            {
+                return "Пользователь не найден";
+            }
+        }
     }
 }

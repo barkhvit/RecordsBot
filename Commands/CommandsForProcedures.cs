@@ -48,12 +48,12 @@ namespace RecordBot.Commands
         }
 
         //показать информацию о выбранной процедуре (клавиатура подбирается в зависимости от причины)
-        public async Task ShowProcedureCommand(ProcedureCallBackDto procedureCallBackDto, Update update, CancellationToken cancellationToken, ReasonShowProcedure reasonShowProcedure)
+        public async Task ShowProcedureCommand(CallBackDto procedureCallBackDto, Update update, CancellationToken cancellationToken, ReasonShowProcedure reasonShowProcedure)
         {
 
-            if (procedureCallBackDto.ProcedureId!=null)
+            if (procedureCallBackDto.Id!=null)
             {
-                var procedure = await _procedureService.GetProcedureByGuidId((Guid)procedureCallBackDto.ProcedureId, cancellationToken);
+                var procedure = await _procedureService.GetProcedureByGuidId((Guid)procedureCallBackDto.Id, cancellationToken);
                 if (procedure != null)
                 {
                     //если это резервирование то GetKeybordForReserved, если администрирование то GetKeybordForProcedure
@@ -92,13 +92,13 @@ namespace RecordBot.Commands
         }
 
         //меняет активность процедуры на противоположный
-        public async Task ChangeIsActiveProcedureCommand(Update update, ProcedureCallBackDto procedureCallBackDto, CancellationToken cancellationToken)
+        public async Task ChangeIsActiveProcedureCommand(Update update, CallBackDto procedureCallBackDto, CancellationToken cancellationToken)
         {
-            if (procedureCallBackDto.ProcedureId!=null)
+            if (procedureCallBackDto.Id!=null)
             {
                 string messageText = "";
-                await _procedureService.ChangeActive((Guid)procedureCallBackDto.ProcedureId, cancellationToken);
-                var procedure = await _procedureService.GetProcedureByGuidId((Guid)procedureCallBackDto.ProcedureId, cancellationToken);
+                await _procedureService.ChangeActive((Guid)procedureCallBackDto.Id, cancellationToken);
+                var procedure = await _procedureService.GetProcedureByGuidId((Guid)procedureCallBackDto.Id, cancellationToken);
                 if (procedure != null)
                 {
                     messageText = procedure.isActive == true ? "Процедура активна" : "Процедура помещена в архив";

@@ -59,57 +59,59 @@ namespace RecordBot.Handlers
 
                 switch (callBack.Object)
                 {
-                    case "MainMenu":
+                    case nameof(Dto_Objects.MainMenu):
                         switch (callBack.Action)
                         {
-                            case "Show": await _commandsForMainMenu.ShowMainMenu(update, cancellationToken); break;//показать главное меню
+                            case nameof(Dto_Action.MM_Show): await _commandsForMainMenu.ShowMainMenu(update, cancellationToken); break;//показать главное меню
                         }
                         break;
-                    case "FreePeriod":
-                        var freePeriodCallBackDto = FreePeriodCallBackDto.FromString(update.CallbackQuery.Data);
+
+                    case nameof(Dto_Objects.FreePeriod):
                         switch (callBack.Action)
                         {
-                            case "Admin": await _commandsForFreePeriod.Admin(update, cancellationToken); break;// admin - периоды == добавить, посмотреть, назад
-                            case "Show": await _commandsForFreePeriod.ShowAllPeriodsCommand(update, cancellationToken); break;//администрирование FreePeriod
+                            case nameof(Dto_Action.FP_Admin): await _commandsForFreePeriod.Admin(update, cancellationToken); break;// admin - периоды == добавить, посмотреть, назад
+                            case nameof(Dto_Action.FP_Show): await _commandsForFreePeriod.ShowAllPeriodsCommand(update, cancellationToken); break;//администрирование FreePeriod
                         }
                         break;
-                    case "AdminMenu":
+
+                    case nameof(Dto_Objects.AdminMenu):
                         switch (callBack.Action)
                         {
-                            case "Show": await _commandsForAdmin.AdminCommand(update, TypeQuery.CallBackQuery, cancellationToken); break; //admin == Услуги, Периоды
+                            case nameof(Dto_Action.AM_Show): await _commandsForAdmin.AdminCommand(update, TypeQuery.CallBackQuery, cancellationToken); break; //admin == Услуги, Периоды
                         }break;
 
-                    case "Appointment":
-                        var appointmentCallBackDto = AppointmentCallBackDto.FromString(update.CallbackQuery.Data);
+                    case nameof(Dto_Objects.Appointment):
                         switch (callBack.Action)
                         {
-                            case "Cancel": await _commandsForAppointments.AskApprovedDeleteAppointments(update, cancellationToken); break; //запросить подтверждение удаления записи
-                            case "ShowAll": await _commandsForAppointments.ShowMyRecordsCommand(update, cancellationToken); break;//показать все записи пользователя
-                            case "Delete": await _commandsForAppointments.DeleteAppoinment(update, cancellationToken); break;//удалить запись
-                            case "Show": await _commandsForAppointments.AppointmentDetailShowCommand(update, appointmentCallBackDto, cancellationToken); break; //показать детально запись c кнопкой отмена
-                            case "ShowAdminMenu": await _commandsForAppointments.ShowAdminMenu(update, cancellationToken); break;//администрирование записей
-                            case "ShowForAdminDates": await _commandsForAppointments.ShowForAdminDates(update, cancellationToken); break; //показать даты с акт записями
-                            case string s when s.StartsWith("ShowByDate"): await _commandsForAppointments.ShowAppointmentsByDate(update, cancellationToken); break;
-                            case "EditAdmin": break;
+                            case nameof(Dto_Action.App_Cancel): await _commandsForAppointments.AskApprovedDeleteAppointments(update, cancellationToken); break; //запросить подтверждение удаления записи
+                            case nameof(Dto_Action.App_ShowAll): await _commandsForAppointments.ShowMyRecordsCommand(update, cancellationToken); break;//показать все записи пользователя
+                            case nameof(Dto_Action.App_Delete): await _commandsForAppointments.DeleteAppoinment(update, cancellationToken); break;//удалить запись
+                            case nameof(Dto_Action.App_Show): await _commandsForAppointments.AppointmentDetailShowCommand(update, callBack, cancellationToken); break; //показать детально запись c кнопкой отмена
+                            case nameof(Dto_Action.App_ShowAdminMenu): await _commandsForAppointments.ShowAdminMenu(update, cancellationToken); break;//администрирование записей
+                            case nameof(Dto_Action.App_ShowForAdminDates): await _commandsForAppointments.ShowForAdminDates(update, cancellationToken); break; //показать даты с акт записями
+                            case nameof(Dto_Action.App_ShowByDate): await _commandsForAppointments.ShowAppointmentsByDate(update, cancellationToken); break;
+                            case nameof(Dto_Action.App_EditAdmin): break;
                         }
                         break;
-                    case "Date": var dateCallBackDto = DateCallBackDto.FromString(update.CallbackQuery.Data);
+
+                    case nameof(Dto_Objects.Date): 
                         switch (callBack.Action)
                         {
-                            case "Show": await _commandsForFreePeriod.ShowDateCommand(update, dateCallBackDto, cancellationToken); break; //показать дату для выбора даты работы
-                            case "Select": await _commandsForFreePeriod.AddDateCommand(update, dateCallBackDto, cancellationToken); break; //добавить дату
+                            case nameof(Dto_Action.Date_Show): await _commandsForFreePeriod.ShowDateCommand(update, callBack, cancellationToken); break; //показать дату для выбора даты работы
+                            case nameof(Dto_Action.Date_Select): await _commandsForFreePeriod.AddDateCommand(update, callBack, cancellationToken); break; //добавить дату
                         }
                         break;
-                    case "Procedure": var procedureCallBackDto = ProcedureCallBackDto.FromString(update.CallbackQuery.Data);
+
+                    case nameof(Dto_Objects.Proc): 
                         switch (callBack.Action)
                         {
-                            case "Admin": await _commandsForProcedures.AdminProcedureCommand(update, cancellationToken); break; //администрирование процедур
-                            case "ShowAllActiveForAdmin": await _commandsForProcedures.ShowActiveProceduresCommand(update, cancellationToken, ReasonShowProcedure.admin); break;//показать все процедуры для АДМИНА
-                            case "ShowAllActiveForUser": await _commandsForProcedures.ShowActiveProceduresCommand(update, cancellationToken, ReasonShowProcedure.reserved); break;//показать все процедуры для ЮЗЕРА
-                            case "ShowAllArchiveForAdmin": await _commandsForProcedures.ShowArchiveProceduresCommand(update, cancellationToken, ReasonShowProcedure.admin); break;//показать все процедуры 
-                            case "SDFA": await _commandsForProcedures.ShowProcedureCommand(procedureCallBackDto, update, cancellationToken, ReasonShowProcedure.admin); break; //показать информацию о процедуре для АДМИНА (ShowDetailForAdmin)
-                            case "SDFU": await _commandsForProcedures.ShowProcedureCommand(procedureCallBackDto, update, cancellationToken, ReasonShowProcedure.reserved); break; //показать информацию о процедуре для ЗАПИСАТЬСЯ (ShowDetailForUser)
-                            case "ChangeActive": await _commandsForProcedures.ChangeIsActiveProcedureCommand(update, procedureCallBackDto, cancellationToken); break;//поменять активность процедуры
+                            case nameof(Dto_Action.Proc_Admin): await _commandsForProcedures.AdminProcedureCommand(update, cancellationToken); break; //администрирование процедур
+                            case nameof(Dto_Action.Proc_ShowAllActiveForAdmin): await _commandsForProcedures.ShowActiveProceduresCommand(update, cancellationToken, ReasonShowProcedure.admin); break;//показать все процедуры для АДМИНА
+                            case nameof(Dto_Action.Proc_ShowAllActiveForUser): await _commandsForProcedures.ShowActiveProceduresCommand(update, cancellationToken, ReasonShowProcedure.reserved); break;//показать все процедуры для ЮЗЕРА
+                            case nameof(Dto_Action.Proc_ShowAllArchiveForAdmin): await _commandsForProcedures.ShowArchiveProceduresCommand(update, cancellationToken, ReasonShowProcedure.admin); break;//показать все процедуры 
+                            case nameof(Dto_Action.Proc_SA): await _commandsForProcedures.ShowProcedureCommand(callBack, update, cancellationToken, ReasonShowProcedure.admin); break; //показать информацию о процедуре для АДМИНА (ShowDetailForAdmin)
+                            case nameof(Dto_Action.Proc_SU): await _commandsForProcedures.ShowProcedureCommand(callBack, update, cancellationToken, ReasonShowProcedure.reserved); break; //показать информацию о процедуре для ЗАПИСАТЬСЯ (ShowDetailForUser)
+                            case nameof(Dto_Action.Proc_ChangeActive): await _commandsForProcedures.ChangeIsActiveProcedureCommand(update, callBack, cancellationToken); break;//поменять активность процедуры
                         }
                         break;
                 }

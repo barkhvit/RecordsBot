@@ -78,6 +78,7 @@ namespace RecordBot.Services
             return allAppointments.FirstOrDefault(a => a.Id == Id);
         }
 
+
         //возвращает возможные слоты 
         public async Task<IReadOnlyList<DateTime>> GetSlotsForAppointment(Guid procedureId, CancellationToken ct)
         {

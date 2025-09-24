@@ -17,12 +17,12 @@ namespace RecordBot.Keyboards
 
             buttons.Add(new InlineKeyboardButton[]
             {
-                InlineKeyboardButton.WithCallbackData("✂️ Услуги ",new CallBackDto("Procedure","ShowAllActiveForUser").ToString()),
-                InlineKeyboardButton.WithCallbackData("📝 Мои записи  ",new CallBackDto("Appointment","ShowAll").ToString())
+                InlineKeyboardButton.WithCallbackData("✂️ Услуги ",new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ShowAllActiveForUser).ToString()),
+                InlineKeyboardButton.WithCallbackData("📝 Мои записи  ",new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_ShowAll).ToString())
             });
             buttons.Add(new[]
             {
-                InlineKeyboardButton.WithCallbackData("✉️ Написать администратору", new CallBackDto("MessageToAdmin","Create").ToString())
+                InlineKeyboardButton.WithCallbackData("✉️ Написать администратору", new CallBackDto(Dto_Objects.MessageToAdmin,Dto_Action.MTA_Create).ToString())
             });
             return new InlineKeyboardMarkup(buttons);
         }
@@ -32,8 +32,8 @@ namespace RecordBot.Keyboards
             List<InlineKeyboardButton[]> buttons = new List<InlineKeyboardButton[]>();
             var row1 = new InlineKeyboardButton[]
             {
-                InlineKeyboardButton.WithCallbackData("Меню админа", new CallBackDto("AdminMenu", "Show").ToString()),
-                InlineKeyboardButton.WithCallbackData("Меню пользователя", new CallBackDto("MainMenu", "Show").ToString())
+                InlineKeyboardButton.WithCallbackData("Меню админа", new CallBackDto(Dto_Objects.AdminMenu,Dto_Action.AM_Show).ToString()),
+                InlineKeyboardButton.WithCallbackData("Меню пользователя", new CallBackDto(Dto_Objects.MainMenu,Dto_Action.MM_Show).ToString())
             };
             
             buttons.Add(row1);

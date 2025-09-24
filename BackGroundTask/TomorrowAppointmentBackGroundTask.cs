@@ -1,4 +1,5 @@
-﻿using RecordBot.Interfaces;
+﻿using RecordBot.CallBackModels;
+using RecordBot.Interfaces;
 using RecordBot.Services;
 using System;
 using System.Collections.Generic;
@@ -28,12 +29,18 @@ namespace RecordBot.BackGroundTask
         protected override async Task Execute(CancellationToken ct)
         {
             DateTime tommorow = DateTime.UtcNow.AddDays(1);
+            //получаем записи на завтрашний день
             var appointmentsTommorow = await _appointmentService.GetAppointmentsByDate(DateOnly.FromDateTime(tommorow), ct);
             foreach(var a in appointmentsTommorow)
             {
                 var procedure = await _procedureService.GetProcedureByGuidId(a.ProcedureId, ct);
                 string text = "Добрый день. Напоминаем Вам о записи:\n";
-                var isAdd = await _notificationService.AddNotification(a.UserId, $"TomorrowApp_{a.Id}", $"{text}{a.dateTime}\n{procedure.Name}",a.dateTime.AddDays(-1),ct);
+
+                //в типе хранится строка типа: Notif:Not_TA(tom appointment):appointment.Id
+                string type = new CallBackDto(Dto_Objects.Notif, Dto_Action.Not_TA, a.Id).ToString();
+
+                var isAdd = await _notificationService.AddNotification(a.UserId, type, $"{text}{a.dateTime}\n{procedure.Name}",a.dateTime.AddDays(-1),ct);
+
                 if(isAdd) Console.WriteLine($"В БД добавлена нотификация: TomorrowApp_{a.Id}");
             }
         }

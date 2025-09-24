@@ -91,20 +91,20 @@ namespace RecordBot.Handlers
                 {
                     switch (Text)
                     {
-                        case "Procedure:Create":    //создание процедуры(услуги)
+                        case $"{nameof(Dto_Objects.Proc)}:{nameof(Dto_Action.Proc_Create)}":    //создание процедуры(услуги)
                             await SetNewContext(update, ScenarioType.AddProcedure, cancellationToken);
                             return;
 
-                        case "FreePeriod:Create": //создание периода
+                        case $"{nameof(Dto_Objects.FreePeriod)}:{nameof(Dto_Action.FP_Create)}": //создание периода
                             await SetNewContext(update, ScenarioType.AddPeriod, cancellationToken);
                             return;
 
-                        case "MessageToAdmin:Create"://сценарий "Написать администратору"
+                        case $"{nameof(Dto_Objects.MessageToAdmin)}:{nameof(Dto_Action.MTA_Create)}"://сценарий "Написать администратору"
                             await SetNewContext(update, ScenarioType.SendMessageToAdmin, cancellationToken);
                             return;
                     }
                     //создание записи
-                    if (Text == "Appointment:Create" || Text.Contains("Procedure:CreateAppointment"))
+                    if (Text.Contains($"{Dto_Objects.Proc}:{Dto_Action.Proc_CreateAppointment}"))
                     {
                         await SetNewContext(update, ScenarioType.AddAppointment, cancellationToken);
                         return;
@@ -131,8 +131,6 @@ namespace RecordBot.Handlers
                         await botClient.SendMessage(update.Message.Chat.Id, "Неизвестная команда", cancellationToken: cancellationToken);
                         break;
                 }
-
-
             }
 
             catch (Exception ex)

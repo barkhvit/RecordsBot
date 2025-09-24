@@ -48,34 +48,32 @@ namespace RecordBot.Scenarios
             ScenarioResult scenarioResult = ScenarioResult.Transition;
             string[] inputText = text.Split(':');
             CallBackDto callBackDto = new("", "");
-            ProcedureCallBackDto procedureCallBackDto = new("", "", null);
 
             if (inputText.Length > 1)
             {
                 callBackDto = CallBackDto.FromString(text);
-                procedureCallBackDto = ProcedureCallBackDto.FromString(text);
             }
             
             
             switch (context.CurrentStep)
             {
                 case null:
-                    var user = await _userService.GetUser(userId, ct);
-                    context.Data["UserId"] = user.Id;
+                    var user = await _userService.GetUser(userId, ct); //получаем юзера
+                    context.Data["UserId"] = user.Id; //помещаем юзер ид в хранилище
                     //если процедура не выбрана
-                    if (procedureCallBackDto.ProcedureId == null)
+                    if (callBackDto.Id == null)
                     {
-                        var procedures = await _procedureService.GetAllProcedures(ct); //все процедуры
+                        var procedures = await _procedureService.GetAllProcedures(ct); //получаем все процедуры
                         //просим пользователя выбрать процедуру
                         await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken:ct);
                         await botClient.EditMessageText(chatId,messageId, "Выберите процедуру:",cancellationToken:ct,
                             replyMarkup: KeybordsForAppointments.GetAllProcedures(procedures,ReasonShowProcedure.reserved));
-                        context.CurrentStep = "Процедура";
+                        context.CurrentStep = "Процедура"; 
                         break;
                     }
                     //если уже выбрана процедура
-                    context.Data["ProcedureId"] = procedureCallBackDto.ProcedureId;
-                    var slots = await _appointmentService.GetSlotsForAppointment((Guid)procedureCallBackDto.ProcedureId, ct);
+                    context.Data["ProcedureId"] = callBackDto.Id; //помещаем ид процедуры в хранилище
+                    var slots = await _appointmentService.GetSlotsForAppointment((Guid)callBackDto.Id, ct); //получаем слоты для записи
                     var dates = slots.Select(s => DateOnly.FromDateTime(s)).Distinct().ToList();
                     await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
                     await botClient.EditMessageText(chatId,messageId, "Выберите дату", cancellationToken: ct,
@@ -85,8 +83,8 @@ namespace RecordBot.Scenarios
                     break;
 
                 case "Процедура":
-                    context.Data["ProcedureId"] = procedureCallBackDto.ProcedureId;
-                    var slots1 = await _appointmentService.GetSlotsForAppointment((Guid)procedureCallBackDto.ProcedureId, ct);
+                    context.Data["ProcedureId"] = callBackDto.Id;
+                    var slots1 = await _appointmentService.GetSlotsForAppointment((Guid)callBackDto.Id, ct);
                     var dates1 = slots1.Select(s => DateOnly.FromDateTime(s)).Distinct().ToList();
                     await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
                     await botClient.EditMessageText(chatId,messageId, "Выберите дату", cancellationToken: ct,

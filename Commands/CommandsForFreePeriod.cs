@@ -47,9 +47,9 @@ namespace RecordBot.Commands
         }
 
         //выбор даты "<--" "date" "-->"
-        public async Task ShowDateCommand(Update update, DateCallBackDto dateCallBackDto, CancellationToken cancellationToken)
+        public async Task ShowDateCommand(Update update, CallBackDto dateCallBackDto, CancellationToken cancellationToken)
         {
-            if (DateOnly.TryParse(dateCallBackDto.dateOnly.ToString(), out var date))
+            if (DateOnly.TryParse(dateCallBackDto.Date.ToString(), out var date))
             {
                 await _telegramBotClient.EditMessageText(
                     chatId: update.CallbackQuery.Message.Chat.Id,
@@ -64,9 +64,9 @@ namespace RecordBot.Commands
         }
 
         //админ нажал на дату, добавляем период свободного времени по выбранной дате с 9 до 18, если дата еще не выбрана
-        public async Task AddDateCommand(Update update, DateCallBackDto dateCallBackDto, CancellationToken cancellationToken)
+        public async Task AddDateCommand(Update update, CallBackDto dateCallBackDto, CancellationToken cancellationToken)
         {
-            if (DateOnly.TryParse(dateCallBackDto.dateOnly.ToString(), out var date))
+            if (DateOnly.TryParse(dateCallBackDto.Date.ToString(), out var date))
             {
                 FreePeriod freePeriod = new()
                 {

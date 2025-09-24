@@ -20,7 +20,7 @@ namespace RecordBot.Services
 
         public async Task<bool> Add(FreePeriod freePeriod,CancellationToken ct)
         {
-            var periodForAdd = await MergePeriods(freePeriod, ct);
+            var periodForAdd = await MergePeriods(freePeriod, ct);//проверяем на пересечение и объединяем если нужно
             if (periodForAdd != null)
             {
                 await _freePeriodRepository.Add(periodForAdd, ct);

@@ -17,5 +17,6 @@ namespace RecordBot.Interfaces
         Task Add(Appointment appointment, CancellationToken ct);
         Task<IReadOnlyList<Appointment>> GetActualyAppointments(CancellationToken ct);
         Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly date, CancellationToken ct);
+        Task<int> UpdateAsync(Appointment appointment, CancellationToken ct);
     }
 }

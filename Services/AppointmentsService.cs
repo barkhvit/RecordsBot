@@ -84,7 +84,10 @@ namespace RecordBot.Services
         {
             List<DateTime> dateTimes = new();
             var periods = await _freePeriodService.GetAllPeriods(ct);
-            var appointments = await _appointmentRepository.GetActualAppointments(ct);
+            var appointments = await _appointmentRepository.GetActualAppointments(ct); // список записей
+
+            //список записей вручную
+
             var procedure = await _procedureService.GetProcedureByGuidId(procedureId, ct);
             if (periods == null) return dateTimes;
             //добавляем все возможные слоты
@@ -110,6 +113,12 @@ namespace RecordBot.Services
                 var finishDateTime = a.dateTime.AddMinutes(proc.DurationMinutes);
                 dateTimes = dateTimes.Where(t => t < startDateTime || t >= finishDateTime).ToList();
             }
+
+            //проверка на попадание в слоты ручных записей
+
+
+
+
             return dateTimes;
         }
 
@@ -128,6 +137,11 @@ namespace RecordBot.Services
         {
             var appointments = await _appointmentRepository.GetAppointmentsByDate(date, ct);
             return appointments;
+        }
+
+        public async Task<int> UpdateAsync(Appointment appointment, CancellationToken ct)
+        {
+            return await _appointmentRepository.UpdateAsync(appointment, ct);
         }
     }
 }

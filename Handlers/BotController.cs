@@ -42,14 +42,15 @@ namespace RecordBot.Handlers
         public event MessageEventHandler? OnHandleUpdateComplete;
 
         public BotController(ITelegramBotClient botClient, IUserService userService, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, IAppointmentService appointmentService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository)
+            IProcedureService procedureService, IAppointmentService appointmentService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository,
+            CallBackUpdateHandler callBackUpdateHandler, MessageUpdateHandler messageUpdateHandler)
         {
             _botClient = botClient;
             _scenarios = scenarios;
             _scenarioContextRepository = scenarioContextRepository;
             _replyToMessageUpdateHandler = new ReplyToMessageUpdateHandler(botClient, procedureService);
-            _messageUpdateHandler = new MessageUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
-            _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
+            _messageUpdateHandler = messageUpdateHandler;
+            _callBackUpdateHandler = callBackUpdateHandler;
             _userService = userService;
         }
 

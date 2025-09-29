@@ -79,5 +79,10 @@ namespace RecordBot.Repository
             var appointments = await GetAllAppointments(ct);
             return appointments.Where(a => DateOnly.FromDateTime(a.dateTime) >= DateOnly.FromDateTime(DateTime.Now)).ToList();
         }
+
+        public Task<int> UpdateAsync(Appointment appointment, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

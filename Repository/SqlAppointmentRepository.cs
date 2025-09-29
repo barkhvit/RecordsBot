@@ -72,5 +72,17 @@ namespace RecordBot.Repository
                 .ToListAsync(ct);
             return appointments.Select(ModelMapper.MapFromModel).ToList();
         }
+
+        public async Task<int> UpdateAsync(Appointment appointment, CancellationToken ct)
+        {
+            using var context = _factory.CreateDataContext();
+            return await context.appointmentModels
+                .Where(a => a.Id == appointment.Id)
+                .Set(a => a.dateTime, appointment.dateTime)
+                .Set(a => a.isConfirmed, appointment.isConfirmed)
+                .Set(a => a.UserId, appointment.UserId)
+                .Set(a => a.ProcedureId, appointment.ProcedureId)
+                .UpdateAsync(ct);
+        }
     }
 }

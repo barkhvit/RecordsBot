@@ -195,6 +195,7 @@ namespace RecordBot
             services.AddScoped<CommandsForFreePeriod>();
             services.AddScoped<CommandsForMainMenu>();
             services.AddScoped<CommandsForProcedures>();
+            services.AddScoped<CommandsForNotifications>();
 
             // Background tasks
             services.AddScoped<SendNotificationBackgroundTask>();

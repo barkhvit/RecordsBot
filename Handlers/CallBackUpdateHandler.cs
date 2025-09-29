@@ -32,16 +32,19 @@ namespace RecordBot.Handlers
         private readonly CommandsForFreePeriod _commandsForFreePeriod;
         private readonly CommandsForProcedures _commandsForProcedures;
         private readonly CommandsForMainMenu _commandsForMainMenu;
+        private readonly CommandsForNotifications _commandsForNotifications;
 
         public CallBackUpdateHandler(IUserService userservice, ITelegramBotClient telegramBotClient, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, IAppointmentService appointmentService)
+            IProcedureService procedureService, IAppointmentService appointmentService, CommandsForNotifications commandsForNotifications,
+            CommandsForAppointments commandsForAppointments)
         {
             _userservice = userservice;
             _freePeriodService = freePeriodService;
             _telegramBotClient = telegramBotClient;
             _procedureService = procedureService;
             _appointmentService = appointmentService;
-            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService, userservice);
+            _commandsForNotifications = commandsForNotifications;
+            _commandsForAppointments = commandsForAppointments;
             _commandsForAdmin = new CommandsForAdmin(_telegramBotClient, appointmentService, procedureService);
             _commandsForFreePeriod = new CommandsForFreePeriod(_telegramBotClient, appointmentService, procedureService, _freePeriodService);
             _commandsForProcedures = new CommandsForProcedures(_telegramBotClient, appointmentService, procedureService);
@@ -91,6 +94,7 @@ namespace RecordBot.Handlers
                             case nameof(Dto_Action.App_ShowForAdminDates): await _commandsForAppointments.ShowForAdminDates(update, cancellationToken); break; //показать даты с акт записями
                             case nameof(Dto_Action.App_ShowByDate): await _commandsForAppointments.ShowAppointmentsByDate(update, cancellationToken); break;
                             case nameof(Dto_Action.App_EditAdmin): break;
+                            case nameof(Dto_Action.App_Cf): await _commandsForAppointments.MakeIsConfimed(update, cancellationToken); break;
                         }
                         break;
 
@@ -112,6 +116,13 @@ namespace RecordBot.Handlers
                             case nameof(Dto_Action.Proc_SA): await _commandsForProcedures.ShowProcedureCommand(callBack, update, cancellationToken, ReasonShowProcedure.admin); break; //показать информацию о процедуре для АДМИНА (ShowDetailForAdmin)
                             case nameof(Dto_Action.Proc_SU): await _commandsForProcedures.ShowProcedureCommand(callBack, update, cancellationToken, ReasonShowProcedure.reserved); break; //показать информацию о процедуре для ЗАПИСАТЬСЯ (ShowDetailForUser)
                             case nameof(Dto_Action.Proc_ChangeActive): await _commandsForProcedures.ChangeIsActiveProcedureCommand(update, callBack, cancellationToken); break;//поменять активность процедуры
+                        }
+                        break;
+
+                    case nameof(Dto_Objects.Notif):
+                        switch (callBack.Action)
+                        {
+                            
                         }
                         break;
                 }

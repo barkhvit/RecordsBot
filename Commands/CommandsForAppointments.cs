@@ -19,10 +19,13 @@ namespace RecordBot.Commands
     public class CommandsForAppointments : Commands
     {
         private readonly IUserService _userService;
-        public CommandsForAppointments(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService, IUserService userService)
+        private readonly CommandsForMainMenu _commandsForMainMenu;
+        public CommandsForAppointments(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService, 
+            IUserService userService, CommandsForMainMenu commandsForMainMenu)
             : base(telegramBotClient, appointmentService, procedureService)
         {
             _userService = userService;
+            _commandsForMainMenu = commandsForMainMenu;
         }
 
         //показать все записи пользователя CallBackDto("Appointment","ShowAll")
@@ -229,6 +232,37 @@ namespace RecordBot.Commands
                 await _telegramBotClient.EditMessageText(chatId, messageId, textMessage, cancellationToken: cancellationToken,
                     replyMarkup:Keyboards.KeyBoardsForMainMenu.BackToMainMenu(),
                     parseMode: ParseMode.Html);
+            }
+        }
+
+        //делаем запись подтвержденной
+        internal async Task MakeIsConfimed(Update update, CancellationToken ct)
+        {
+            var (chatId, userId, messageId, text) = GetMessageInfo(update);
+
+            var dto = CallBackDto.FromString(text);
+
+            if (dto.Id != null)
+            {
+                var appointment = await _appointmentService.GetAppointmentById((Guid)dto.Id, ct);
+
+                if (appointment != null)
+                {
+                    appointment.isConfirmed = true;//меняем на тру
+
+                    //обновляем
+                    int count = await _appointmentService.UpdateAsync(appointment, ct);
+
+                    //отправляем сообщения
+                    await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
+                    if (count > 0)
+                    {
+                        await _telegramBotClient.EditMessageText(chatId, messageId
+                            , $"{update.CallbackQuery.Message.Text}\n\n✅ ЗАПИСЬ ПОДТВЕРЖДЕНА", cancellationToken: ct,
+                            replyMarkup: new InlineKeyboardMarkup(InlineKeyboardButton
+                            .WithCallbackData("🏠 Главное меню", new CallBackDto(Dto_Objects.MainMenu, Dto_Action.MM_Show).ToString())));
+                    }
+                }
             }
         }
     }

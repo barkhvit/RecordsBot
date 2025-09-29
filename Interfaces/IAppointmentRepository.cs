@@ -16,5 +16,6 @@ namespace RecordBot.Interfaces
         Task<bool> Delete(Guid appointmentId, CancellationToken ct);
         Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly dateOnly, CancellationToken ct);
         Task<IReadOnlyList<Appointment>> GetActualAppointments(CancellationToken ct);
+        Task<int> UpdateAsync(Appointment appointment, CancellationToken ct);
     }
 }

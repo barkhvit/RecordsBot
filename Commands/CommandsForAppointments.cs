@@ -19,10 +19,13 @@ namespace RecordBot.Commands
     public class CommandsForAppointments : Commands
     {
         private readonly IUserService _userService;
-        public CommandsForAppointments(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService, IUserService userService)
+        private readonly CommandsForMainMenu _commandsForMainMenu;
+        public CommandsForAppointments(ITelegramBotClient telegramBotClient, IAppointmentService appointmentService, IProcedureService procedureService, 
+            IUserService userService, CommandsForMainMenu commandsForMainMenu)
             : base(telegramBotClient, appointmentService, procedureService)
         {
             _userService = userService;
+            _commandsForMainMenu = commandsForMainMenu;
         }
 
         //показать все записи пользователя CallBackDto("Appointment","ShowAll")
@@ -58,16 +61,14 @@ namespace RecordBot.Commands
         }
 
         //показать детально конкретную запись пользователя, вывести кнопки НАЗАД(все записи) и ОТМЕНИТЬ ЗАПИСЬ
-        public async Task AppointmentDetailShowCommand(Update update, AppointmentCallBackDto appointmentCallBackDto, CancellationToken ct)
+        public async Task AppointmentDetailShowCommand(Update update, CallBackDto appointmentCallBackDto, CancellationToken ct)
         {
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
 
-            var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.AppointmentId, ct);
+            var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.Id, ct);
           
             var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId,ct);
-
-            AppointmentCallBackDto appointmentCallBackDto1 = new AppointmentCallBackDto("Appointment", "Cancel", appointment.Id );
 
             if (update.Type == UpdateType.CallbackQuery) await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id);
 
@@ -78,8 +79,8 @@ namespace RecordBot.Commands
                 cancellationToken: ct,
                 replyMarkup: new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("⬅️ Назад ", new CallBackDto("Appointment","ShowAll").ToString()),
-                    InlineKeyboardButton.WithCallbackData("❌ Отменить запись  ", new AppointmentCallBackDto("Appointment", "Cancel", appointmentCallBackDto.AppointmentId).ToString())
+                    InlineKeyboardButton.WithCallbackData("⬅️ Назад ", new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_ShowAll).ToString()),
+                    InlineKeyboardButton.WithCallbackData("❌ Отменить запись  ", new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_Cancel, appointmentCallBackDto.Id).ToString())
                 });
            
         }
@@ -89,10 +90,10 @@ namespace RecordBot.Commands
         {
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
-            AppointmentCallBackDto appointmentCallBackDto = AppointmentCallBackDto.FromString(text);
-            if (appointmentCallBackDto.AppointmentId != null)
+            CallBackDto appointmentCallBackDto = CallBackDto.FromString(text);
+            if (appointmentCallBackDto.Id != null)
             {
-                var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.AppointmentId, ct);
+                var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.Id, ct);
                 var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId, ct);
                 string mesText = $"🚨 Вы действительно хотите отменить запись на {appointment.dateTime.ToString("hh.MM.yyyy HH:mm")}?";
                 if (update.Type == UpdateType.CallbackQuery) await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id);
@@ -103,8 +104,8 @@ namespace RecordBot.Commands
                     cancellationToken: ct,
                     replyMarkup: new InlineKeyboardButton[]
                     {
-                        InlineKeyboardButton.WithCallbackData("Да", new AppointmentCallBackDto("Appointment","Delete",appointment.Id).ToString()),
-                        InlineKeyboardButton.WithCallbackData("Нет", new CallBackDto("Appointment","ShowAll").ToString())
+                        InlineKeyboardButton.WithCallbackData("Да", new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_Delete,appointment.Id).ToString()),
+                        InlineKeyboardButton.WithCallbackData("Нет", new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_ShowAll).ToString())
                     } );
             }
         }
@@ -114,10 +115,10 @@ namespace RecordBot.Commands
         {
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
-            AppointmentCallBackDto appointmentCallBackDto = AppointmentCallBackDto.FromString(text);
-            if (appointmentCallBackDto.AppointmentId != null)
+            CallBackDto appointmentCallBackDto = CallBackDto.FromString(text);
+            if (appointmentCallBackDto.Id != null)
             {
-                var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.AppointmentId, ct);
+                var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.Id, ct);
                 var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId, ct);
                 var isCancel = await _appointmentService.CancelAppointment(appointment.Id, ct);
                 if (isCancel)
@@ -143,12 +144,12 @@ namespace RecordBot.Commands
             {
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("👀 Посмотреть ",new CallBackDto("Appointment","ShowForAdminDates").ToString()),
-                    InlineKeyboardButton.WithCallbackData("📝 Редактировать ",new CallBackDto("Appointment","EditAdmin").ToString())
+                    InlineKeyboardButton.WithCallbackData("👀 Посмотреть ",new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_ShowForAdminDates).ToString()),
+                    InlineKeyboardButton.WithCallbackData("📝 Редактировать ",new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_EditAdmin).ToString())
                 },
                 new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("⬅️ Назад",new CallBackDto("AdminMenu","Show").ToString())
+                    InlineKeyboardButton.WithCallbackData("⬅️ Назад",new CallBackDto(Dto_Objects.AdminMenu,Dto_Action.AM_Show).ToString())
                 }
             };
 
@@ -175,7 +176,7 @@ namespace RecordBot.Commands
                 textMessage = "Выберите дату:";
                 //список кнопок 
                 var allButtons = dates.Select(d => InlineKeyboardButton.WithCallbackData($"{d.ToString("dd.MM.yyyy")}",
-                    new CallBackDto("Appointment", $"ShowByDate_{d.ToString("dd.MM.yyyy")}").ToString())).ToList();
+                    new CallBackDto(Dto_Objects.Appointment, Dto_Action.App_ShowByDate, date:d).ToString())).ToList();
 
                 for (int i = 0; i < allButtons.Count; i += 3)
                 {
@@ -186,8 +187,8 @@ namespace RecordBot.Commands
             }
             inlineKeyboardButtons.Add(new List<InlineKeyboardButton>
             {
-                InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto("MainMenu","Show").ToString()),
-                InlineKeyboardButton.WithCallbackData("Меню администратора",new CallBackDto("AdminMenu","Show").ToString())
+                InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto(Dto_Objects.MainMenu,Dto_Action.MM_Show).ToString()),
+                InlineKeyboardButton.WithCallbackData("Меню администратора",new CallBackDto(Dto_Objects.AdminMenu,Dto_Action.AM_Show).ToString())
             });
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup(inlineKeyboardButtons);
             await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
@@ -200,9 +201,11 @@ namespace RecordBot.Commands
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
 
-            //получаем дату из строки
-            if(DateOnly.TryParseExact(text.Substring(text.Length-10,10),"dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None,out DateOnly date))
+            var dto = CallBackDto.FromString(text);
+
+            if(dto.Date!=null)
             {
+                var date = (DateOnly)dto.Date;
                 var appointments = await _appointmentService.GetAppointmentsByDate(date, cancellationToken);
                 string textMessage = "";
                 if (appointments == null)
@@ -229,6 +232,37 @@ namespace RecordBot.Commands
                 await _telegramBotClient.EditMessageText(chatId, messageId, textMessage, cancellationToken: cancellationToken,
                     replyMarkup:Keyboards.KeyBoardsForMainMenu.BackToMainMenu(),
                     parseMode: ParseMode.Html);
+            }
+        }
+
+        //делаем запись подтвержденной
+        internal async Task MakeIsConfimed(Update update, CancellationToken ct)
+        {
+            var (chatId, userId, messageId, text) = GetMessageInfo(update);
+
+            var dto = CallBackDto.FromString(text);
+
+            if (dto.Id != null)
+            {
+                var appointment = await _appointmentService.GetAppointmentById((Guid)dto.Id, ct);
+
+                if (appointment != null)
+                {
+                    appointment.isConfirmed = true;//меняем на тру
+
+                    //обновляем
+                    int count = await _appointmentService.UpdateAsync(appointment, ct);
+
+                    //отправляем сообщения
+                    await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
+                    if (count > 0)
+                    {
+                        await _telegramBotClient.EditMessageText(chatId, messageId
+                            , $"{update.CallbackQuery.Message.Text}\n\n✅ ЗАПИСЬ ПОДТВЕРЖДЕНА", cancellationToken: ct,
+                            replyMarkup: new InlineKeyboardMarkup(InlineKeyboardButton
+                            .WithCallbackData("🏠 Главное меню", new CallBackDto(Dto_Objects.MainMenu, Dto_Action.MM_Show).ToString())));
+                    }
+                }
             }
         }
     }

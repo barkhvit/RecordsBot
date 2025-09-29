@@ -28,14 +28,14 @@ namespace RecordBot.Handlers
         private readonly CommandsForAdmin _commandsForAdmin;
         private readonly CommandsForMainMenu _commandsForMainMenu;
         public MessageUpdateHandler(IUserService userservice, ITelegramBotClient telegramBotClient, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, IAppointmentService appointmentService)
+            IProcedureService procedureService, IAppointmentService appointmentService, CommandsForAppointments commandsForAppointments)
         {
             _telegramBotClient = telegramBotClient;
             _userservice = userservice;
             _freePeriodService = freePeriodService;
             _appointmentService = appointmentService;
             _procedureService = procedureService;
-            _commandsForAppointments = new CommandsForAppointments(_telegramBotClient, appointmentService, procedureService,userservice);
+            _commandsForAppointments = commandsForAppointments;
             _commandsForAdmin = new CommandsForAdmin(_telegramBotClient, appointmentService, procedureService);
             _commandsForMainMenu = new CommandsForMainMenu(_telegramBotClient, appointmentService, procedureService);
         }

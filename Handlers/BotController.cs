@@ -42,14 +42,15 @@ namespace RecordBot.Handlers
         public event MessageEventHandler? OnHandleUpdateComplete;
 
         public BotController(ITelegramBotClient botClient, IUserService userService, IFreePeriodService freePeriodService, 
-            IProcedureService procedureService, IAppointmentService appointmentService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository)
+            IProcedureService procedureService, IAppointmentService appointmentService, IEnumerable<IScenario> scenarios, IScenarioContextRepository scenarioContextRepository,
+            CallBackUpdateHandler callBackUpdateHandler, MessageUpdateHandler messageUpdateHandler)
         {
             _botClient = botClient;
             _scenarios = scenarios;
             _scenarioContextRepository = scenarioContextRepository;
             _replyToMessageUpdateHandler = new ReplyToMessageUpdateHandler(botClient, procedureService);
-            _messageUpdateHandler = new MessageUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
-            _callBackUpdateHandler = new CallBackUpdateHandler(userService, botClient, freePeriodService, procedureService, appointmentService);
+            _messageUpdateHandler = messageUpdateHandler;
+            _callBackUpdateHandler = callBackUpdateHandler;
             _userService = userService;
         }
 
@@ -91,20 +92,20 @@ namespace RecordBot.Handlers
                 {
                     switch (Text)
                     {
-                        case "Procedure:Create":    //создание процедуры(услуги)
+                        case $"{nameof(Dto_Objects.Proc)}:{nameof(Dto_Action.Proc_Create)}":    //создание процедуры(услуги)
                             await SetNewContext(update, ScenarioType.AddProcedure, cancellationToken);
                             return;
 
-                        case "FreePeriod:Create": //создание периода
+                        case $"{nameof(Dto_Objects.FreePeriod)}:{nameof(Dto_Action.FP_Create)}": //создание периода
                             await SetNewContext(update, ScenarioType.AddPeriod, cancellationToken);
                             return;
 
-                        case "MessageToAdmin:Create"://сценарий "Написать администратору"
+                        case $"{nameof(Dto_Objects.MessageToAdmin)}:{nameof(Dto_Action.MTA_Create)}"://сценарий "Написать администратору"
                             await SetNewContext(update, ScenarioType.SendMessageToAdmin, cancellationToken);
                             return;
                     }
                     //создание записи
-                    if (Text == "Appointment:Create" || Text.Contains("Procedure:CreateAppointment"))
+                    if (Text.Contains($"{Dto_Objects.Proc}:{Dto_Action.Proc_CreateAppointment}"))
                     {
                         await SetNewContext(update, ScenarioType.AddAppointment, cancellationToken);
                         return;
@@ -131,8 +132,6 @@ namespace RecordBot.Handlers
                         await botClient.SendMessage(update.Message.Chat.Id, "Неизвестная команда", cancellationToken: cancellationToken);
                         break;
                 }
-
-
             }
 
             catch (Exception ex)

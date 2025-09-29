@@ -52,8 +52,8 @@ namespace RecordBot.Scenarios
                         long AdminId = Admins.admins.FirstOrDefault();
                         InlineKeyboardButton[] buttons1 = new[]
                         {
-                            InlineKeyboardButton.WithCallbackData("✉️ Написать еще ","MessageToAdmin:Create"),
-                            InlineKeyboardButton.WithCallbackData("🏠 Главное меню ",new CallBackDto("MainMenu","Show").ToString())
+                            InlineKeyboardButton.WithCallbackData("✉️ Написать еще ",new CallBackDto(Dto_Objects.MessageToAdmin,Dto_Action.MTA_Create).ToString()),
+                            InlineKeyboardButton.WithCallbackData("🏠 Главное меню ",new CallBackDto(Dto_Objects.MainMenu, Dto_Action.MM_Show).ToString())
                         };
                         await botClient.SendMessage(AdminId, $"От пользователя {user.FirstName} {user.LastName}(<a href=\"tg://user?id={userId}\">{userName}</a>!) " +
                             $"поступило сообщение: {text}",

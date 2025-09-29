@@ -23,7 +23,7 @@ namespace RecordBot.Keyboards
                 if (procedure.Name != null)
                 {
                     row.Add(
-                    new InlineKeyboardButton(procedure.Name) { CallbackData = new ProcedureCallBackDto("Procedure", callBackData, procedure.Id).ToString() }
+                    new InlineKeyboardButton(procedure.Name) { CallbackData = new CallBackDto(Dto_Objects.Proc, callBackData, procedure.Id).ToString() }
                     );
                 }
                 i++;
@@ -63,6 +63,7 @@ namespace RecordBot.Keyboards
             {
                 keyboardRows.Add(buttons.Skip(i).Take(3));
             }
+
             // Добавляем дополнительную кнопку (например, "Назад")
             keyboardRows.Add(new[]
             {

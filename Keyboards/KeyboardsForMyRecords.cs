@@ -20,8 +20,8 @@ namespace RecordBot.Keyboards
             {
                 buttons.Add(new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto("MainMenu","Show").ToString()),
-                    InlineKeyboardButton.WithCallbackData("📅 Записаться",new CallBackDto("Procedure","ShowAllActiveForUser").ToString()),
+                    InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto(Dto_Objects.MainMenu,Dto_Action.MM_Show).ToString()),
+                    InlineKeyboardButton.WithCallbackData("📅 Записаться",new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ShowAllActiveForUser).ToString()),
                 });
             }
             else
@@ -29,7 +29,7 @@ namespace RecordBot.Keyboards
                 foreach (var r in records)
                 {
                     string textButton = $"{r.dateTime.ToString("✅ dd.MM.yyyy HH:mm")}";
-                    string callBackData = new AppointmentCallBackDto("Appointment", "Show", r.Id).ToString();
+                    string callBackData = new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_Show, r.Id).ToString();
                     buttons.Add(new[]
                     {
                     InlineKeyboardButton.WithCallbackData(textButton,callBackData)
@@ -38,7 +38,7 @@ namespace RecordBot.Keyboards
                 }
                 buttons.Add(new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto("MainMenu","Show").ToString())
+                    InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto(Dto_Objects.MainMenu, Dto_Action.MM_Show).ToString())
                 });
             }
             return new InlineKeyboardMarkup(buttons);

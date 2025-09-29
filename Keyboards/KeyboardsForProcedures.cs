@@ -18,12 +18,12 @@ namespace RecordBot.Keyboards
             List<InlineKeyboardButton[]> btn = new List<InlineKeyboardButton[]>();
             btn.Add(new[]
             {
-                new InlineKeyboardButton("✂️ Услуги") { CallbackData = new CallBackDto("Procedure","Admin").ToString()},
-                new InlineKeyboardButton("📅 Периоды работы  ") { CallbackData = new CallBackDto("FreePeriod","Admin").ToString()}
+                new InlineKeyboardButton("✂️ Услуги") { CallbackData = new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_Admin).ToString()},
+                new InlineKeyboardButton("📅 Периоды работы  ") { CallbackData = new CallBackDto(Dto_Objects.FreePeriod,Dto_Action.FP_Admin).ToString()}
             });
             btn.Add(new[]
             {
-                new InlineKeyboardButton("🗒️ Записи ") {CallbackData = new CallBackDto("Appointment","ShowAdminMenu").ToString()}
+                new InlineKeyboardButton("🗒️ Записи ") {CallbackData = new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_ShowAdminMenu).ToString()}
             });
 
             return new InlineKeyboardMarkup(btn);
@@ -35,26 +35,26 @@ namespace RecordBot.Keyboards
             string textButton = procedure.isActive == true ? "в архив" : "сделать активной";
             InlineKeyboardButton[] buttons = new InlineKeyboardButton[]
             {
-                new InlineKeyboardButton("⬅️ Назад"){CallbackData = new CallBackDto("Procedure","ShowAllActiveForAdmin").ToString()},
-                new InlineKeyboardButton(textButton){CallbackData = new ProcedureCallBackDto("Procedure","ChangeActive",procedure.Id).ToString()}
+                new InlineKeyboardButton("⬅️ Назад"){CallbackData = new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ShowAllActiveForAdmin).ToString()},
+                new InlineKeyboardButton(textButton){CallbackData = new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ChangeActive,procedure.Id).ToString()}
             };
             return new InlineKeyboardMarkup(buttons);
         }
 
-        //клавиатура администрирования Услуг(Procedure), появляется после нажатия: /admin --> Услуги
+        //клавиатура администрирования Услуг(Proc), появляется после нажатия: /admin --> Услуги
         public static InlineKeyboardMarkup GetProcedureAdminKeybord()
         {
             var buttons = new List<InlineKeyboardButton[]>();
             InlineKeyboardButton[] row1 = new InlineKeyboardButton[]
             {
-                new InlineKeyboardButton("⬅️ Назад "){CallbackData = new CallBackDto("AdminMenu", "Show").ToString()},
-                new InlineKeyboardButton("➕ Cоздать "){CallbackData = new CallBackDto("Procedure", "Create").ToString()}
+                new InlineKeyboardButton("⬅️ Назад "){CallbackData = new CallBackDto(Dto_Objects.AdminMenu,Dto_Action.AM_Show).ToString()},
+                new InlineKeyboardButton("➕ Cоздать "){CallbackData = new CallBackDto(Dto_Objects.Proc, Dto_Action.Proc_Create).ToString()}
             };
 
             InlineKeyboardButton[] row2 = new InlineKeyboardButton[]
             {
-                new InlineKeyboardButton("👀 Показать"){CallbackData = new CallBackDto("Procedure","ShowAllActiveForAdmin").ToString()},
-                new InlineKeyboardButton("🗄 Архив"){CallbackData = new CallBackDto("Procedure","ShowAllArchiveForAdmin").ToString()}
+                new InlineKeyboardButton("👀 Показать"){CallbackData = new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ShowAllActiveForAdmin).ToString()},
+                new InlineKeyboardButton("🗄 Архив"){CallbackData = new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ShowAllArchiveForAdmin).ToString()}
             };
             buttons.Add(row1);
             buttons.Add(row2);
@@ -65,7 +65,7 @@ namespace RecordBot.Keyboards
         //создание InlineKeyboard из списка услуг
         public static InlineKeyboardMarkup GetAllProcedures(IReadOnlyList<Procedure> procedures, ReasonShowProcedure reasonShowProcedure)
         {
-            string callBackData = reasonShowProcedure == ReasonShowProcedure.admin ? "SDFA" : "SDFU";
+            string callBackData = reasonShowProcedure == ReasonShowProcedure.admin ? nameof(Dto_Action.Proc_SA) : nameof(Dto_Action.Proc_SU);
             List<InlineKeyboardButton[]> buttons = new();
             List<InlineKeyboardButton> row = new();
             int i = 0;
@@ -74,7 +74,7 @@ namespace RecordBot.Keyboards
                 if (procedure.Name != null)
                 {
                     row.Add(
-                    new InlineKeyboardButton(procedure.Name) { CallbackData = new ProcedureCallBackDto("Procedure", callBackData,procedure.Id).ToString() }
+                    new InlineKeyboardButton(procedure.Name) { CallbackData = new CallBackDto(Dto_Objects.Proc, callBackData,procedure.Id).ToString() }
                     );
                 }
                 i++;
@@ -89,14 +89,14 @@ namespace RecordBot.Keyboards
             {
                 buttons.Add(new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto("MainMenu","Show").ToString())
+                    InlineKeyboardButton.WithCallbackData("🏠 Главное меню",new CallBackDto(Dto_Objects.MainMenu,Dto_Action.MM_Show).ToString())
                 });
             }
             else // если администратор
             {
                 buttons.Add(new InlineKeyboardButton[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Меню администратора",new CallBackDto("AdminMenu","Show").ToString())
+                    InlineKeyboardButton.WithCallbackData("Меню администратора",new CallBackDto(Dto_Objects.AdminMenu,Dto_Action.AM_Show).ToString())
                 });
             }
 
@@ -108,10 +108,10 @@ namespace RecordBot.Keyboards
         {
             string textButton = "📅 ЗАПИСАТЬСЯ  ";
             //string callBackData = $"reservedOnProcedure:{procedure.Id}";
-            string callBackData = new ProcedureCallBackDto("Procedure", "CreateAppointment", procedure.Id).ToString();
+            string callBackData = new CallBackDto(Dto_Objects.Proc, Dto_Action.Proc_CreateAppointment, procedure.Id).ToString();
             InlineKeyboardButton[] buttons = new InlineKeyboardButton[]
             {
-                new InlineKeyboardButton("⬅️ Назад"){CallbackData = new CallBackDto("Procedure","ShowAllActiveForUser").ToString()},
+                new InlineKeyboardButton("⬅️ Назад"){CallbackData = new CallBackDto(Dto_Objects.Proc,Dto_Action.Proc_ShowAllActiveForUser).ToString()},
                 new InlineKeyboardButton(textButton){CallbackData = callBackData}
             };
             return new InlineKeyboardMarkup(buttons);

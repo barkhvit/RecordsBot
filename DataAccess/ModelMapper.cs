@@ -12,6 +12,30 @@ namespace RecordBot.DataAccess
 {
     internal static class ModelMapper
     {
+        public static GuestAppointment MapFromModel(GuestAppointmentModel model)
+        {
+            return new GuestAppointment
+            {
+                Id = model.Id,
+                DateTime = model.DateTime,
+                IsConfirmed = model.IsConfirmed,
+                Name = model.Name,
+                Phone = model.Phone,
+                ProcedureId = model.ProcedureId
+            };
+        }
+        public static GuestAppointmentModel MapToModel(GuestAppointment entity)
+        {
+            return new GuestAppointmentModel
+            {
+                Id = entity.Id,
+                DateTime = entity.DateTime,
+                IsConfirmed = entity.IsConfirmed,
+                Name = entity.Name,
+                Phone = entity.Phone,
+                ProcedureId = entity.ProcedureId
+            };
+        }
         public static Notification MapFromModel(NotificationModel model)
         {
             return new Notification
@@ -43,8 +67,8 @@ namespace RecordBot.DataAccess
             return new Appointment
             {
                 Id = model.Id,
-                dateTime = model.dateTime,
-                isConfirmed = model.isConfirmed,
+                DateTime = model.DateTime,
+                IsConfirmed = model.IsConfirmed,
                 UserId = model.UserId,
                 ProcedureId = model.ProcedureId
             };
@@ -54,8 +78,8 @@ namespace RecordBot.DataAccess
             return new AppointmentModel
             {
                 Id = entity.Id,
-                dateTime = entity.dateTime,
-                isConfirmed = entity.isConfirmed,
+                DateTime = entity.DateTime,
+                IsConfirmed = entity.IsConfirmed,
                 UserId = entity.UserId,
                 ProcedureId = entity.ProcedureId
             };

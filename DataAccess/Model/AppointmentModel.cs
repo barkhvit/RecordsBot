@@ -11,8 +11,8 @@ namespace RecordBot.DataAccess.Model
     public class AppointmentModel
     {
         [PrimaryKey][Column("id")]public Guid Id { get; set; }
-        [Column("datetime")] public DateTime dateTime { get; set; }
-        [Column("isconfirmed")] public bool isConfirmed { get; set; }
+        [Column("datetime")] public DateTime DateTime { get; set; }
+        [Column("isconfirmed")] public bool IsConfirmed { get; set; }
         [Column("userid")] public Guid UserId { get; set; }
         [Column("procedureid")] public Guid ProcedureId { get; set; }
 

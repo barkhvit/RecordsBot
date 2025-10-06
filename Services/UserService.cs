@@ -1,4 +1,5 @@
-﻿using RecordBot.Interfaces;
+﻿using RecordBot.Helpers;
+using RecordBot.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,22 +31,26 @@ namespace RecordBot.Services
 
         public async Task<Models.User> RegisterUser(Update update, CancellationToken cancellationToken)
         {
-            User userFrom = update.Message.From;
-            var user = await GetUser(userFrom.Id, cancellationToken);
-            if(user == null)
+            User? userFrom = MessageInfo.GetUserFromUpdate(update);
+            if (userFrom != null)
             {
-                Models.User newUser = new Models.User
+                var user = await GetUser(userFrom.Id, cancellationToken);
+                if (user == null)
                 {
-                    Id = Guid.NewGuid(),
-                    TelegramId = userFrom.Id,
-                    FirstName = userFrom.FirstName,
-                    LastName = userFrom.LastName,
-                    RegistrationDate = DateTime.Now
-                };
-                await _userRepository.Add(newUser, cancellationToken);
-                return newUser;
+                    Models.User newUser = new Models.User
+                    {
+                        Id = Guid.NewGuid(),
+                        TelegramId = userFrom.Id,
+                        FirstName = userFrom.FirstName,
+                        LastName = userFrom.LastName,
+                        RegistrationDate = DateTime.Now
+                    };
+                    await _userRepository.Add(newUser, cancellationToken);
+                    return newUser;
+                }
+                return user;
             }
-            return user;
+            return null;
         }
     }
 }

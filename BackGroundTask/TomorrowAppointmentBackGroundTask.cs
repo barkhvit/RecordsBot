@@ -33,15 +33,19 @@ namespace RecordBot.BackGroundTask
             var appointmentsTommorow = await _appointmentService.GetAppointmentsByDate(DateOnly.FromDateTime(tommorow), ct);
             foreach(var a in appointmentsTommorow)
             {
-                var procedure = await _procedureService.GetProcedureByGuidId(a.ProcedureId, ct);
-                string text = "Добрый день. Напоминаем Вам о записи:\n";
+                if (a.UserId != null) //только для записей, которые сделаны в телеграм отправляем напоминания
+                {
+                    var procedure = await _procedureService.GetProcedureByGuidId(a.ProcedureId, ct);
+                    string text = "Добрый день. Напоминаем Вам о записи:\n";
 
-                //в типе хранится строка типа: Notif:Not_TA(tom appointment):appointment.Id
-                string type = new CallBackDto(Dto_Objects.Notif, Dto_Action.Not_TA, a.Id).ToString();
+                    //в типе хранится строка типа: Notif:Not_TA(tom appointment):appointment.Id
+                    string type = new CallBackDto(Dto_Objects.Notif, Dto_Action.Not_TA, a.Id).ToString();
 
-                var isAdd = await _notificationService.AddNotification(a.UserId, type, $"{text}{a.dateTime}\n{procedure.Name}",a.dateTime.AddDays(-1),ct);
+                    var isAdd = await _notificationService.AddNotification((Guid)a.UserId, type, $"{text}{a.DateTime}\n{procedure.Name}", a.DateTime.AddDays(-1), ct);
 
-                if(isAdd) Console.WriteLine($"В БД добавлена нотификация: TomorrowApp_{a.Id}");
+                    if (isAdd) Console.WriteLine($"В БД добавлена нотификация: TomorrowApp_{a.Id}");
+                }
+                
             }
         }
     }

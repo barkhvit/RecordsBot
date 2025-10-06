@@ -69,8 +69,6 @@ namespace RecordBot.Handlers
                 replyMarkup: Keyboards.KeyboardsForProcedures.GetAllProcedures(procedures, reasonShowProcedure));
         }
 
-        
-
         private async Task StartCommand(Update update, CancellationToken cancellationToken)
         {
             var user = await _userservice.RegisterUser(update, cancellationToken);
@@ -78,7 +76,7 @@ namespace RecordBot.Handlers
             await _telegramBotClient.SetMyCommands(
                 commands: MenuCommandsService.mainMenu,
                 scope: null,//для всех пользователей,
-                languageCode:null);//язык по умолчанию
+                languageCode: null);//язык по умолчанию
 
             await _commandsForMainMenu.ShowMainMenu(update, cancellationToken);
         }

@@ -28,7 +28,7 @@ namespace RecordBot.Keyboards
             {
                 foreach (var r in records)
                 {
-                    string textButton = $"{r.dateTime.ToString("✅ dd.MM.yyyy HH:mm")}";
+                    string textButton = $"{r.DateTime.ToString("✅ dd.MM.yyyy HH:mm")}";
                     string callBackData = new CallBackDto(Dto_Objects.Appointment,Dto_Action.App_Show, r.Id).ToString();
                     buttons.Add(new[]
                     {

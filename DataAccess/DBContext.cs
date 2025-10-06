@@ -1,6 +1,7 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
 using RecordBot.DataAccess.Model;
+using RecordBot.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +18,6 @@ namespace RecordBot.DataAccess
         public ITable<ProcedureModel> procedureModel => this.GetTable<ProcedureModel>();
         public ITable<UserModel> userModel => this.GetTable<UserModel>();
         public ITable<NotificationModel> notificationModel => this.GetTable<NotificationModel>();
+        public ITable<GuestAppointmentModel> guestAppointmentsModel => this.GetTable<GuestAppointmentModel>();
     }
 }

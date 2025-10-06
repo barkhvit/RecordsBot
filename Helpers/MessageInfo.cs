@@ -70,5 +70,15 @@ namespace RecordBot.Helpers
                 return "Пользователь не найден";
             }
         }
+
+        public static User? GetUserFromUpdate(Update update)
+        {
+            return update switch
+            {
+                { Type: UpdateType.Message, Message: var msg } => (msg.From),
+                { Type: UpdateType.CallbackQuery, Message: var cbq } => (cbq.From),
+                _ => throw new InvalidOperationException("Неизвестный тип сообщения от пользователя")
+            };
+        }
     }
 }

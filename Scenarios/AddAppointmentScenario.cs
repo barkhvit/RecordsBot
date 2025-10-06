@@ -149,16 +149,16 @@ namespace RecordBot.Scenarios
             Appointment appointment = new Appointment()
             {
                 Id = Guid.NewGuid(),
-                dateTime = new DateTime((DateOnly)context.Data["Дата"], timeOnly),
+                DateTime = new DateTime((DateOnly)context.Data["Дата"], timeOnly),
                 ProcedureId = (Guid)context.Data["ProcedureId"],
                 UserId = (Guid)context.Data["UserId"],
-                isConfirmed = false
+                IsConfirmed = false
             };
             context.Data["Запись"] = appointment;
 
             string mesText = $"Вы хотите записаться на процедуру:\n" +
                 $"{procedure.Name}\n" +
-                $"{appointment.dateTime.ToString("dd.MM.yyyy HH:mm")}";
+                $"{appointment.DateTime.ToString("dd.MM.yyyy HH:mm")}";
             
             await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: ct);
             await botClient.EditMessageText(chatId,messageId, mesText, cancellationToken: ct,
@@ -195,7 +195,7 @@ namespace RecordBot.Scenarios
                     string link = await MessageInfo.GetUserProfileLinkAsync(userApp.TelegramId, botClient, ct);
                     string textMessage = $"Новая запись:\n{userApp.FirstName} {userApp.LastName}" +
                         $"({link})\n" +
-                        $"{procApp.Name} {appointment.dateTime}";
+                        $"{procApp.Name} {appointment.DateTime}";
 
                     await botClient.SendMessage(adm, textMessage,
                         cancellationToken: ct);

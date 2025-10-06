@@ -66,7 +66,7 @@ namespace RecordBot.Commands
             // Получаем данные из update с помощью pattern matching
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
 
-            var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.Id, ct);
+            var appointment = await _appointmentService.GetAppointmentById<IAppointment>((Guid)appointmentCallBackDto.Id, ct);
           
             var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId,ct);
 
@@ -75,7 +75,7 @@ namespace RecordBot.Commands
             await _telegramBotClient.EditMessageText(
                 chatId: chatId,
                 messageId: messageId,
-                text: $"{procedure.Name}\nДата: {appointment.dateTime.ToString("dd.MM.yyyy HH:mm")}\nСтоимость: {procedure.Price.ToString()} рублей.",
+                text: $"{procedure.Name}\nДата: {appointment.DateTime.ToString("dd.MM.yyyy HH:mm")}\nСтоимость: {procedure.Price.ToString()} рублей.",
                 cancellationToken: ct,
                 replyMarkup: new InlineKeyboardButton[]
                 {
@@ -93,9 +93,9 @@ namespace RecordBot.Commands
             CallBackDto appointmentCallBackDto = CallBackDto.FromString(text);
             if (appointmentCallBackDto.Id != null)
             {
-                var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.Id, ct);
+                var appointment = await _appointmentService.GetAppointmentById<IAppointment>((Guid)appointmentCallBackDto.Id, ct);
                 var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId, ct);
-                string mesText = $"🚨 Вы действительно хотите отменить запись на {appointment.dateTime.ToString("hh.MM.yyyy HH:mm")}?";
+                string mesText = $"🚨 Вы действительно хотите отменить запись на {appointment.DateTime.ToString("hh.MM.yyyy HH:mm")}?";
                 if (update.Type == UpdateType.CallbackQuery) await _telegramBotClient.AnswerCallbackQuery(update.CallbackQuery.Id);
                 await _telegramBotClient.EditMessageText(
                     chatId: chatId,
@@ -118,7 +118,7 @@ namespace RecordBot.Commands
             CallBackDto appointmentCallBackDto = CallBackDto.FromString(text);
             if (appointmentCallBackDto.Id != null)
             {
-                var appointment = await _appointmentService.GetAppointmentById((Guid)appointmentCallBackDto.Id, ct);
+                var appointment = await _appointmentService.GetAppointmentById<IAppointment>((Guid)appointmentCallBackDto.Id, ct);
                 var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId, ct);
                 var isCancel = await _appointmentService.CancelAppointment(appointment.Id, ct);
                 if (isCancel)
@@ -166,7 +166,7 @@ namespace RecordBot.Commands
             var (chatId, userId, messageId, text) = GetMessageInfo(update);
 
             var appointments = await _appointmentService.GetActualyAppointments(ct);
-            var dates = appointments.Select(a => DateOnly.FromDateTime(a.dateTime)).Distinct().ToList();
+            var dates = appointments.Select(a => DateOnly.FromDateTime(a.DateTime)).Distinct().ToList();
             string textMessage = "Записей нет.";
             //список кнопок делаем по три в ряд
             List<List<InlineKeyboardButton>> inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
@@ -196,6 +196,7 @@ namespace RecordBot.Commands
                 replyMarkup: inlineKeyboardMarkup);
         }
 
+
         internal async Task ShowAppointmentsByDate(Update update, CancellationToken cancellationToken)
         {
             // Получаем данные из update с помощью pattern matching
@@ -218,12 +219,21 @@ namespace RecordBot.Commands
                     foreach(var a in appointments)
                     {
                         var procedure = await _procedureService.GetProcedureByGuidId(a.ProcedureId, cancellationToken);
-                        var user = await _userService.GetUserByUserId(a.UserId, cancellationToken);
-                        var userName = await MessageInfo.GetUsernameByTelegramId(user.TelegramId, _telegramBotClient, cancellationToken);
 
-                        string userLink = userName != null ? $"\n{TimeOnly.FromDateTime(a.dateTime)} - " +
-                            $"{user.FirstName} {user.LastName} (<a href=\"tg://user?id={user.TelegramId}\">{userName}</a>) - {procedure.Name}":
-                            $"\n{TimeOnly.FromDateTime(a.dateTime)} - {user.FirstName} {user.LastName} - {procedure.Name}"; 
+                        //если пользователь записался через Телеграмм и есть его UserID
+                        string userLink = "";//время и ссылка на пользователя, если запись через телеграмм
+                        if (a.UserId != null)//если есть UserID (запись через телеграм)
+                        {
+                            var user = await _userService.GetUserByUserId((Guid)a.UserId, cancellationToken);
+                            var userName = await MessageInfo.GetUsernameByTelegramId(user.TelegramId, _telegramBotClient, cancellationToken);
+                            userLink = userName != null ? $"\n{TimeOnly.FromDateTime(a.DateTime)} - " +
+                                $"{user.FirstName} {user.LastName} (<a href=\"tg://user?id={user.TelegramId}\">{userName}</a>) - {procedure.Name}" :
+                                $"\n{TimeOnly.FromDateTime(a.DateTime)} - {user.FirstName} {user.LastName} - {procedure.Name}";
+                        }
+                        else
+                        {
+                            userLink = $"\n{TimeOnly.FromDateTime(a.DateTime)} - {a.Name} тел:{a.Phone} - {procedure.Name}";
+                        }
 
                         textMessage += userLink;
                     }
@@ -244,11 +254,11 @@ namespace RecordBot.Commands
 
             if (dto.Id != null)
             {
-                var appointment = await _appointmentService.GetAppointmentById((Guid)dto.Id, ct);
+                var appointment = await _appointmentService.GetAppointmentById<IAppointment>((Guid)dto.Id, ct);
 
                 if (appointment != null)
                 {
-                    appointment.isConfirmed = true;//меняем на тру
+                    appointment.IsConfirmed = true;//меняем на тру
 
                     //обновляем
                     int count = await _appointmentService.UpdateAsync(appointment, ct);

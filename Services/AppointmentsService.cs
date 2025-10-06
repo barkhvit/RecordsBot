@@ -23,59 +23,18 @@ namespace RecordBot.Services
 
         public async Task<bool> CancelAppointment(Guid appoinmentId, CancellationToken ct)
         {
-            var appointments = await _appointmentRepository.GetAllAppointments(ct);
-            var appointment = appointments.FirstOrDefault(a => a.Id == appoinmentId);
-            var isDelete = await _appointmentRepository.Delete(appoinmentId, ct);
-            var procedure = await _procedureService.GetProcedureByGuidId(appointment.ProcedureId, ct);
-            if (isDelete)
-            {
-                FreePeriod freePeriod = new FreePeriod()
-                {
-                    FreePeriodId = Guid.NewGuid(),
-                    Date = DateOnly.FromDateTime(appointment.dateTime),
-                    StartTime = TimeOnly.FromDateTime(appointment.dateTime),
-                    FinishTime = TimeOnly.FromDateTime(appointment.dateTime).AddMinutes(procedure.DurationMinutes)
-                };
-                return await _freePeriodService.Add(freePeriod, ct);
-            }
-            return isDelete;
-        }
-
-        public async Task<Appointment?> CreateAppointment(Guid userId, Procedure procedure, DateTime dateTime, CancellationToken ct)
-        {
-            //получаем период для бронирования
-            var freePeriodForReserved = await _freePeriodService.GetFreePeriodForReserved(procedure, dateTime, ct);
-
-            if (freePeriodForReserved != null)
-            {
-                Appointment appointment = new()
-                {
-                    Id = Guid.NewGuid(),
-                    dateTime = dateTime,
-                    UserId = userId,
-                    isConfirmed = false,
-                    ProcedureId = procedure.Id
-                };
-                bool isSplit = await _freePeriodService.SplitPeriod(freePeriodForReserved, dateTime, procedure.DurationMinutes, ct);
-                if (isSplit)
-                {
-                    await _appointmentRepository.Add(appointment, ct);
-                    return appointment;
-                }
-            }
-            return null;
+            return await _appointmentRepository.Delete(appoinmentId, ct);
         }
 
         public async Task<IReadOnlyList<Appointment>> GetUserAppointments(Guid userId, CancellationToken ct)
         {
             var allAppointments = await _appointmentRepository.GetAppointmentsByUserId(userId, ct);
-            return allAppointments.Where(a => a.dateTime >= DateTime.Now).ToList().AsReadOnly();
+            return allAppointments.Where(a => a.DateTime >= DateTime.Now).ToList().AsReadOnly();
         }
 
-        public async Task<Appointment?> GetAppointmentById(Guid Id, CancellationToken ct)
+        public async Task<T?> GetAppointmentById<T>(Guid Id, CancellationToken ct) where T: class, IAppointment
         {
-            var allAppointments = await _appointmentRepository.GetAllAppointments(ct);
-            return allAppointments.FirstOrDefault(a => a.Id == Id);
+            return await _appointmentRepository.GetAppointmentById<T>(Id, ct);
         }
 
 
@@ -83,14 +42,18 @@ namespace RecordBot.Services
         public async Task<IReadOnlyList<DateTime>> GetSlotsForAppointment(Guid procedureId, CancellationToken ct)
         {
             List<DateTime> dateTimes = new();
-            var periods = await _freePeriodService.GetAllPeriods(ct);
-            var appointments = await _appointmentRepository.GetActualAppointments(ct); // список записей
 
-            //список записей вручную
+            var periods = await _freePeriodService.GetAllPeriods(ct); // периоды
+            
+            var appointments = await _appointmentRepository.GetActualAppointments<Appointment>(ct); //список записей основной табл
+            
+            var guestAppointments = await _appointmentRepository.GetActualAppointments<GuestAppointment>(ct);//список записей вручную
 
-            var procedure = await _procedureService.GetProcedureByGuidId(procedureId, ct);
+            var procedure = await _procedureService.GetProcedureByGuidId(procedureId, ct); //процедура по ID из аргументов
+
             if (periods == null) return dateTimes;
-            //добавляем все возможные слоты
+
+            //добавляем все возможные слоты пока без учета записей
             foreach(var p in periods)
             {
                 var dateTime = new DateTime(p.Date, p.StartTime);
@@ -104,44 +67,92 @@ namespace RecordBot.Services
                 }
             }
             if (appointments == null) return dateTimes;
+
             //проверяем слоты на попадание в записи
             foreach(var a in appointments)
             {
                 //процедура каждой записи, начало и окончание
                 var proc = await _procedureService.GetProcedureByGuidId(a.ProcedureId, ct);
-                var startDateTime = a.dateTime;
-                var finishDateTime = a.dateTime.AddMinutes(proc.DurationMinutes);
+                var startDateTime = a.DateTime;
+                var finishDateTime = a.DateTime.AddMinutes(proc.DurationMinutes);
                 dateTimes = dateTimes.Where(t => t < startDateTime || t >= finishDateTime).ToList();
             }
 
             //проверка на попадание в слоты ручных записей
-
-
-
+            foreach (var a in guestAppointments)
+            {
+                //процедура каждой записи, начало и окончание
+                var proc = await _procedureService.GetProcedureByGuidId(a.ProcedureId, ct);
+                var startDateTime = a.DateTime;
+                var finishDateTime = a.DateTime.AddMinutes(proc.DurationMinutes);
+                dateTimes = dateTimes.Where(t => t < startDateTime || t >= finishDateTime).ToList();
+            }
 
             return dateTimes;
         }
 
-        public async Task Add(Appointment appointment, CancellationToken ct)
+        public async Task Add<T>(T appointment, CancellationToken ct) where T: class, IAppointment
         {
             await _appointmentRepository.Add(appointment, ct);
         }
 
-        public async Task<IReadOnlyList<Appointment>> GetActualyAppointments(CancellationToken ct)
+        public async Task<IReadOnlyList<AppointmentsView>> GetActualyAppointments(CancellationToken ct)
         {
-            var appointments = await _appointmentRepository.GetActualAppointments(ct);
-            return appointments;
+            //получаем из основной таблицы записи Appointment
+            var appointments = await _appointmentRepository.GetActualAppointments<Appointment>(ct);
+
+            //получаем из гостевой GuestAppointment
+            var guestAppointments = await _appointmentRepository.GetActualAppointments<GuestAppointment>(ct);
+
+            //объединяем
+            return ConcateAppointments(appointments, guestAppointments);
         }
 
-        public async Task<IReadOnlyList<Appointment>> GetAppointmentsByDate(DateOnly date, CancellationToken ct)
+        public async Task<IReadOnlyList<AppointmentsView>> GetAppointmentsByDate(DateOnly date, CancellationToken ct)
         {
-            var appointments = await _appointmentRepository.GetAppointmentsByDate(date, ct);
-            return appointments;
+            //получаем из основной таблицы записи Appointment
+            var appointments = await _appointmentRepository.GetAppointmentsByDate<Appointment>(date, ct);
+
+            //получаем из гостевой GuestAppointment
+            var guestAppointments = await _appointmentRepository.GetAppointmentsByDate<GuestAppointment>(date, ct);
+
+            //объединяем
+            return ConcateAppointments(appointments, guestAppointments);
         }
 
-        public async Task<int> UpdateAsync(Appointment appointment, CancellationToken ct)
+        public async Task<int> UpdateAsync<T>(T appointment, CancellationToken ct) where T: class, IAppointment
         {
             return await _appointmentRepository.UpdateAsync(appointment, ct);
+        }
+
+        // объединение таблиц Appointment и guestAppointment
+        private IReadOnlyList<AppointmentsView> ConcateAppointments(IReadOnlyList<Appointment> appointments, IReadOnlyList<GuestAppointment> guestAppointments)
+        {
+            var concatApp = new List<AppointmentsView>();
+            foreach (var a in appointments)
+            {
+                concatApp.Add(new AppointmentsView()
+                {
+                    Id = a.Id,
+                    DateTime = a.DateTime,
+                    IsConfirmed = a.IsConfirmed,
+                    UserId = a.UserId,
+                    ProcedureId = a.ProcedureId
+                });
+            }
+            foreach (var ga in guestAppointments)
+            {
+                concatApp.Add(new AppointmentsView()
+                {
+                    Id = ga.Id,
+                    DateTime = ga.DateTime,
+                    IsConfirmed = ga.IsConfirmed,
+                    Name = ga.Name,
+                    Phone = ga.Phone,
+                    ProcedureId = ga.ProcedureId
+                });
+            }
+            return concatApp;
         }
     }
 }

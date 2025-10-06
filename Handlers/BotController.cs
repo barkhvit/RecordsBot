@@ -59,17 +59,18 @@ namespace RecordBot.Handlers
         //определяем тип апдейта и перенаправляем в нужный Handler
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            // Получаем данные из update с помощью pattern matching
-            var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
-            var user = await _userService.GetUser(userId, cancellationToken);
-            OnHandleUpdateStarted.Invoke(chatId, user.FirstName, Text);
-
             try
             {
-                
+                // Получаем данные из update с помощью pattern matching
+                var (chatId, userId, messageId, Text) = MessageInfo.GetMessageInfo(update);
+
+                var user = await _userService.RegisterUser(update, cancellationToken);
+                if (user != null)
+                    OnHandleUpdateStarted.Invoke(chatId, user.FirstName, Text);
+
 
                 //обработка Cancel - отмена сценария
-                if(Text == "/cancel" || Text == "cancel")
+                if (Text == "/cancel" || Text == "cancel")
                 {
                     await _scenarioContextRepository.ResetContext(userId, cancellationToken);
                     await _botClient.AnswerCallbackQuery(update.CallbackQuery.Id);
@@ -132,6 +133,8 @@ namespace RecordBot.Handlers
                         await botClient.SendMessage(update.Message.Chat.Id, "Неизвестная команда", cancellationToken: cancellationToken);
                         break;
                 }
+
+                OnHandleUpdateComplete.Invoke(chatId, user.FirstName, Text);
             }
 
             catch (Exception ex)
@@ -141,7 +144,7 @@ namespace RecordBot.Handlers
 
             finally
             {
-                OnHandleUpdateComplete.Invoke(chatId, user.FirstName, Text);
+                
             }
         }   
 
@@ -181,5 +184,7 @@ namespace RecordBot.Handlers
                 await _scenarioContextRepository.SetContext(context.UserId, context, ct);
             }
         }
+
+        
     }
 }
